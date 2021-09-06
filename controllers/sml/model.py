@@ -1,4 +1,4 @@
-from controllers.sml.extension.space_extension import ContinuousSpace3d
+from controllers.sml.extension.spaces.space_extension import ContinuousSpace3d
 from mesa.time import SimultaneousActivation
 from mesa import Agent, Model
 from controllers.sml.inc.define import *
@@ -198,7 +198,7 @@ class AirConditioner(Agent):
     def step(self):
         if self.model.schedule.steps%60 == 0:
             self.read_control_data()
-            print("設定温度：{0}　運転モード：{1}　風速：{2}　吹き出し温度：{3}".format(self.set_temp,self.mode,self.verocity,self.release_temp))
+            #print("設定温度：{0}　運転モード：{1}　風速：{2}　吹き出し温度：{3}".format(self.set_temp,self.mode,self.verocity,self.release_temp))
         self.switch_mode()
         self.create_heat()
 
@@ -238,6 +238,8 @@ class HeatModel(Model):
         self.spaces_agents_list = []
         self.per_time_dic = {}
         self.time = datetime(2020,1,15,15,00,1)
+
+        self.running = True
 
         for x_i in range(width - 5):
             for y_i in range(height - 5):

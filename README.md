@@ -1,5 +1,13 @@
-# agent-simulation-system
-研究用シミュレーションシステムのソース管理リポジトリ
+thermal agent simulation system
+===============================
+![system concept](system_concept.png?raw=true "System concept")
+
+## 実行環境
+OS:       Ubuntu 16.04.7 LTS (Xenial Xerus)<br>
+Language: Python 3.7.12
+
+
+
 
 mesa:https://mesa.readthedocs.io/en/doc_builds/index.html
 

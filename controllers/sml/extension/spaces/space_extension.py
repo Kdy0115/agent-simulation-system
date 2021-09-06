@@ -225,3 +225,21 @@ class ContinuousSpace3d:
 
         x, y, z = pos
         return x < self.x_min or x >= self.x_max or y < self.y_min or y >= self.y_max or z < self.z_min or z >= self.z_max
+
+    def get_cell_list_contents( self, cell_list: Iterable[FloatCoordinate_3d]) -> List[GridContent_3d]:
+        """
+        Args:
+            cell_list: Array-like of (x, y) tuples, or single tuple.
+
+        Returns:
+            A list of the contents of the cells identified in cell_list
+
+        """
+        agents_list = []
+        for agent in self._agent_to_index:
+            x_point, y_point, z_point = cell_list[0]
+            if agent.__class__.__name__ != "HeatCharge" and agent.__class__.__name__ != "AirConditioner":
+                if agent.pos == cell_list[0]:
+                    agents_list.append(agent)
+        
+        return agents_list
