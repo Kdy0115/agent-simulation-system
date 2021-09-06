@@ -45,8 +45,8 @@ VirtualBoxをインストールします。
 git clone https://github.com/Kdy0115/agent-simulation-system.git
 ```
 
-### 4. vagrantファイルの確認
-vagrantファイルの設定を確認してください。
+#### 4. vagrantファイルの確認
+`Vagrantfile`の設定を確認してください。
 基本的にはデフォルト設定で問題ありません。
 
 
@@ -83,7 +83,7 @@ config.vm.provider "virtualbox" do |vb|
 ※CPU数は並列処理を利用する場合に数を変更することがあります。
 
 ### 5. vagrantの実行
-`VagrantFile`と同階層で以下のコマンドを実行して仮想サーバーを生成してください。
+`Vagrantfile`と同階層で以下のコマンドを実行して仮想サーバーを生成してください。
 ```
 vagrant up
 ```
