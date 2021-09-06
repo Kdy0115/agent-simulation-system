@@ -20,3 +20,6 @@ LICENSE
 
 # Shell files
 *.sh
+
+# Vagrant files
+.vagrant
