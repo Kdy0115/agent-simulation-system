@@ -1,51 +1,67 @@
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-import model
-from ..cvt.conversion import dataset
+from controllers.sml.model import *
+from controllers.cvt.conversion import dataset
+from controllers.sml.extension.visualization.canvas_grid_visualization_extension import CanvasGrid_3d
+from tqdm import tqdm
+import json
+import math
+import time
+from multiprocessing import Process
 
-source_data = [
-    {
-        "x":1,
-        "y":2,
-        "z":2,
-        "size":1,
-        "kind":2
-    }
-]
+class Simulation(Process):
 
-# class Simulation():
-#     """ Simulation execusion class （シミュレーション実行クラス）
-#     """
-#     def __init__(self,data):
-#         def set_simulation_space(bems_data,source_data):
-#             """ Set simulation space from heat source information（熱源情報からシミュレーション空間を設定）
-#             """
+    def __init__(self, num, model, output_folder, floor):
+        super().__init__()
+        self.__num = num
+        self.__model = model
+        self.__output_folder = output_folder
+        self.__floor = floor
 
-            
-#         self.floor = data["floor"]
-#         self.bems_data = data["bems_data"]
-#         self.control_data = data["control_data"]
-#         self.source_data = data["source_data"]
-#         self.date = data["start_date"]
-     
-model = model.HeatModel(20, 20, 5, 5, 30, dataset.control_data)
+    def output_agent_json(self):
+        fw = open('{0}/result{1}.json'.format(self.__output_folder,self.__floor),'w')
+        json.dump(self.__model.spaces_agents_list,fw,indent=4)
 
-# for i in range(100):
-#     model.step()
+    def run_simulation(self, num: int, model):
+        for i in tqdm(range(num)):
+            model.step()
+        return model
 
-# agent_counts = np.zeros((model.grid.width, model.grid.height))
-# for cell in model.grid.coord_iter():
-#     cell_content, x, y, z = cell
-#     if z == 2:
-#         agent_temp = cell_content[0].temp
-#         agent_counts[x][y] = agent_temp
+    def run(self):
+        self.run_simulation(self.__num, self.__model)
+        self.output_agent_json()
 
-# a = np.array(agent_counts).T[::-1]
-# plt.imshow(a, interpolation='nearest')
-# plt.tick_params(labelbottom=False,
-#                labelleft=False,
-#                labelright=False,
-#                labeltop=False)
-# plt.colorbar()
-# plt.show()
+
+class SimulationControl():
+
+    def __init__(self,step,dataset):
+        floors = [4,5]
+        self.simulation_step = step
+        self.models_floor_dic = {}
+        self.dataset = dataset
+        self.output_folder = self.dataset.output_folder
+
+        for floor in floors:
+            model = HeatModel(25, 25, 6, floor, self.simulation_step, self.dataset.control_data)
+            self.models_floor_dic["{}F".format(floor)] = model
+
+    def run_all_simulations(self):
+        start = time.time()
+        processes = []
+        for key,model in self.models_floor_dic.items():
+            # print("Simulation number {} is running.".format(cnt))
+            process = Simulation(self.simulation_step, model, self.output_folder, key)
+            process.start()
+            processes.append(process)
+            # for i in tqdm(range(self.simulation_step)):
+            #     model.step()
+            print("Simulation number 1 is finishing.")
+        # print(processes[0].model)
+        # exit()
+        cnt = 1
+        for p in processes:
+            p.join()
+            # self.output_agent_json(key,p.__model)
+        elapsed_time = time.time() - start
+        print("Simulation time:{0}".format(elapsed_time) + "[sec]")

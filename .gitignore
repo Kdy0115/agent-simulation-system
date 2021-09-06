@@ -10,5 +10,13 @@ out/
 *.json
 *.csv
 
+ubuntu-xenial-16.04-cloudimg-console.log
+
 # Documents
 docs/
+
+# License
+LICENSE
+
+# Shell files
+*.sh
