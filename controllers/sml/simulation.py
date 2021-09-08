@@ -36,19 +36,29 @@ class Simulation(Process):
 class SimulationControl():
 
     def __init__(self,step,dataset):
-        floors = [4,5]
+        self.floors = [4,5]
         self.simulation_step = step
         self.models_floor_dic = {}
         self.dataset = dataset
         self.output_folder = self.dataset.output_folder
 
-        for floor in floors:
+        for floor in self.floors:
             model = HeatModel(25, 25, 6, floor, self.simulation_step, self.dataset.control_data)
             self.models_floor_dic["{}F".format(floor)] = model
+
+    def _str_simulation_state(self):
+        print("Simulation starts")
+        time.sleep(0.1)
+        print("Simulation Floors: {}.".format(self.floors))
+        time.sleep(0.1)
+        print("Simulation Calculation Steps: {}".format(self.simulation_step))
+        time.sleep(0.1)
+        print("Simulation Results Folder: {}".format(self.output_folder))
 
     def run_all_simulations(self):
         start = time.time()
         processes = []
+        self._str_simulation_state()
         for key,model in self.models_floor_dic.items():
             # print("Simulation number {} is running.".format(cnt))
             process = Simulation(self.simulation_step, model, self.output_folder, key)
@@ -56,12 +66,13 @@ class SimulationControl():
             processes.append(process)
             # for i in tqdm(range(self.simulation_step)):
             #     model.step()
-            print("Simulation number 1 is finishing.")
         # print(processes[0].model)
         # exit()
         cnt = 1
+        print()
         for p in processes:
             p.join()
             # self.output_agent_json(key,p.__model)
         elapsed_time = time.time() - start
-        print("Simulation time:{0}".format(elapsed_time) + "[sec]")
+        print("Simulation finished!")
+        print("Simulation time:{}".format(int(elapsed_time)) + "[sec]")
