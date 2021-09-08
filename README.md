@@ -14,7 +14,7 @@ thermal agent simulation system
 実行環境
 --------
 - OS: Vagrantで実行するため依存なし
-- Python 3.7.12: https://www.python.org/downloads/release/python-3712/
+- Python 3.9.5: https://www.python.org/downloads/release/python-395/
 - Vagrant 2.2.18: https://www.vagrantup.com/
 - VirtualBox 6.1.26: https://www.virtualbox.org/wiki/Downloads
 
@@ -54,26 +54,18 @@ vagrantのバージョンを指定します。
 ```
 Vagrant.configure("2") do |config|
 ```
-VirtualBoxに名前をつけます。
+仮想サーバーのOSを指定します。（Ubuntsu 21.04）
 ```
-config.vm.box = "thermal_simulation"
-```
-仮想サーバーのOSを指定します。（Ubuntsu 16.0.4）
-```
-config.vm.box_url = "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-vagrant.box"
-```
-仮想サーバーのIPアドレスを割り当てます。
-```
-config.vm.network "private_network", ip: "172.16.16.1"
+config.vm.box = "ubuntu/hirsute64"
 ```
 ローカルフォルダと仮想サーバー内のフォルダを同期します。
+デフォルトではvagrantファイルと同階層のカレントディレクトリと同期します。
 ```
 config.vm.synced_folder "./", "/var/thermal_simulation"
 ```
 仮想サーバーのその他の設定を行います。
 ```
 config.vm.provider "virtualbox" do |vb|
-  # GUIは使用しません。
   vb.gui = false
   # 割り当てるメモリ容量を決定します。
   vb.memory = 4096
