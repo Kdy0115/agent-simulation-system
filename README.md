@@ -13,10 +13,9 @@ thermal agent simulation system
 
 実行環境
 --------
-- OS: Vagrantで実行するため依存なし
 - Python 3.9.5: https://www.python.org/downloads/release/python-395/
 - Vagrant 2.2.18: https://www.vagrantup.com/
-- VirtualBox 6.1.26: https://www.virtualbox.org/wiki/Downloads
+- VirtualBox 6.0.24: https://www.virtualbox.org/wiki/Downloads
 
 ### python package
 
@@ -24,9 +23,9 @@ thermal agent simulation system
 - matplotlib 3.4.3: https://matplotlib.org/stable/index.html
 - mesa 0.8.9: https://mesa.readthedocs.io/en/doc_builds/index.html
 
-※これ以外のパッケージはpython3.7.12の標準で準備されています。
+※これ以外のパッケージはpython3.9.5の標準で準備されています。
 
-## Quick Start
+## 実行環境のセットアップ
 #### 1. Vagrantをインストール
 https://www.vagrantup.com/
 
@@ -78,4 +77,9 @@ config.vm.provider "virtualbox" do |vb|
 `Vagrantfile`と同階層で以下のコマンドを実行して仮想サーバーを生成してください。
 ```
 vagrant up
+```
+
+### 6. 仮想サーバーへ接続
+```
+vagrant ssh
 ```
