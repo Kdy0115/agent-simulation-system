@@ -13,6 +13,14 @@ from multiprocessing import Process
 class Simulation(Process):
 
     def __init__(self, num, model, output_folder, floor):
+        """ コンストラクタ
+
+        Args:
+            num ([type]): [description]
+            model ([type]): [description]
+            output_folder ([type]): [description]
+            floor ([type]): [description]
+        """        
         super().__init__()
         self.__num = num
         self.__model = model
@@ -35,15 +43,25 @@ class Simulation(Process):
 
 class SimulationControl():
 
-    def __init__(self,step,dataset):
-        self.floors = [4,5]
-        self.simulation_step = step
+    def __init__(self,dataset):
+        #self.floors = [4,5]
+        self.simulation_step = dataset.simulation_step
         self.models_floor_dic = {}
-        self.dataset = dataset
+        self.dataset = dataset.simulation_data
         self.output_folder = self.dataset.output_folder
 
-        for floor in self.floors:
-            model = HeatModel(25, 25, 6, floor, self.simulation_step, self.dataset.control_data)
+        for data in self.dataset:
+            condition = {
+                "x":{
+                    "relation":">=",
+                    "value"   :18
+                },
+                "y":{
+                    "relation": ">",
+                    "value"   : 4,
+                },
+            }
+            model = HeatModel(25, 25, 6, data["init_bems"]["floor"], self.simulation_step, self.dataset.control_data,condition)
             self.models_floor_dic["{}F".format(floor)] = model
 
     def _str_simulation_state(self):

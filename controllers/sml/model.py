@@ -209,7 +209,7 @@ class HeatModel(Model):
     Args:
         Model (Model): Override from Model class
     """    
-    def __init__(self, width, height, depth, floor, simulation_step, control_data):
+    def __init__(self, width, height, depth, floor, simulation_step, control_data,condition):
         """ Model init method.
 
         Args:
@@ -227,7 +227,7 @@ class HeatModel(Model):
         self.simulation_step = simulation_step
         self.control_data = control_data
         self.current_control_data = next(self.control_data)
-        self.current_id = 0
+        self.current_id =  0
         self.space_x_min = 0
         self.space_y_min = 0
         self.space_z_min = 0
