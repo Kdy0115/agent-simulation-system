@@ -7,8 +7,8 @@ controllers/sml/inc/__pycache__/
 # db/
 out/
 
-*.json
-*.csv
+# *.json
+# *.csv
 
 ubuntu-xenial-16.04-cloudimg-console.log
 
