@@ -3,12 +3,16 @@ controllers/cvt/__pycache__/
 controllers/sml/inc/__pycache__/
 
 # Data files
-#bems/
-# db/
+bems/
+db/
 out/
 
 *.json
 *.csv
+
+# Cache files
+*.pyc
+__pycache__/
 
 ubuntu-xenial-16.04-cloudimg-console.log
 

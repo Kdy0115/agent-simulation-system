@@ -121,7 +121,7 @@ class DataSet():
                             "control_data"  : l["control_data"],
                             "layout_data"   : m
                         }
-                    self.post_data["simulation_data"].append(one_post_data)
+                        self.post_data["simulation_data"].append(one_post_data)
 
 dataset = DataSet(config_bems, config_control, config_layout, config_simulation)
 dataset.integrate_files()

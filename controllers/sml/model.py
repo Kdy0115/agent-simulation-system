@@ -5,6 +5,7 @@ from controllers.sml.inc.define import *
 import numpy as np
 import random
 import math
+import copy
 from datetime import datetime, timedelta
 
 class Space(Agent):
@@ -141,18 +142,19 @@ class HeatCharge(Agent):
 
 class AirConditioner(Agent):
     """ An agent with fixed initial wealth."""
-    def __init__(self, unique_id, model, pos):
+    def __init__(self, unique_id, model, pos, ac_id):
         super().__init__(unique_id, model)
         self.pos = pos
         self.direction = WIND_OUTLET_ANGLE
         self.thermo = True
+        self.ac_id = ac_id
         self.read_control_data()
         self.power = 0
 
     def read_control_data(self):
-        self.set_temp = float(self.model.current_control_data["設定温度0"])
-        self.mode     = int(self.model.current_control_data["運転モード0"])
-        verocity_label = int(self.model.current_control_data["風速0"])
+        self.set_temp = float(self.model.current_control_data["設定温度{}".format(self.ac_id)])
+        self.mode     = int(self.model.current_control_data["運転モード{}".format(self.ac_id)])
+        verocity_label = int(self.model.current_control_data["風速{}".format(self.ac_id)])
         if verocity_label == 1:
             verocity = 0.5
         elif verocity_label == 2:
@@ -209,7 +211,7 @@ class HeatModel(Model):
     Args:
         Model (Model): Override from Model class
     """    
-    def __init__(self, width, height, depth, floor, simulation_step, control_data,condition):
+    def __init__(self,floor, simulation_step, init_bems_data, control_data, layout_data):
         """ Model init method.
 
         Args:
@@ -218,46 +220,152 @@ class HeatModel(Model):
             depth (Int): The depth of a space
             floor (Int): Floor for simulation
             simulation_step (Int): The number of simulation
+            init_ebms_data(object): Formatted init simulation data
             control_data (object): Formatted control plan data
+            layout_data (object): Formatted layout data
         """        
-        self.num_agents = width * height * depth
-        self.grid = ContinuousSpace3d(width, height, depth, False, -5, -5, -1)
-        self.schedule = SimultaneousActivation(self)
+        # self.num_agents = width * height * depth
+
+
+
+        #self.grid = ContinuousSpace3d(width, height, depth, False, -5, -5, -1)
+        self.current_id =  0
+        self.running = True
+        self.terminate = False
+
+        self.layout_data = layout_data["layout"]
+        
+        self.ac_position = layout_data["ac"]
+
         self.floor = floor
         self.simulation_step = simulation_step
+
         self.control_data = control_data
         self.current_control_data = next(self.control_data)
-        self.current_id =  0
-        self.space_x_min = 0
-        self.space_y_min = 0
-        self.space_z_min = 0
-        self.space_x_max = width - 5
-        self.space_y_max = height - 5
-        self.space_z_max = depth - 1
+
+
         self.remove_agents_list = []
         self.spaces_agents_list = []
         self.per_time_dic = {}
-        self.time = datetime(2020,1,15,15,00,1)
 
-        self.running = True
+        self.time = datetime.strptime(init_bems_data["時間"].replace("/","-"), '%Y-%m-%d %H:%M')
 
-        for x_i in range(width - 5):
-            for y_i in range(height - 5):
-                for z_i in range(depth - 1):
-                    pos = (x_i, y_i, z_i)
-                    if ((z_i == 4) and (x_i == 5 and y_i == 5)) or ((z_i == 4) and (x_i == 10 and y_i == 10)):
-                        agent = AirConditioner(self.next_id(),self,pos)
-                        self.schedule.add(agent)
-                        self.grid.place_agent(agent, pos)
-                    if ((z_i == 0 or z_i == depth-2) or (x_i == 0 or x_i == width-6) or (y_i == 0 or y_i == height-6)):
-                        agent = HeatSource(self.next_id(),self,pos,30,1)
+        self._set_space_param()
+
+    def _set_ac_agent(self):
+        for one in self.ac_position:
+            pos = (one["x"],one["y"],one["z"])
+            agent = AirConditioner(self.next_id(),self,pos,one["id"])
+            self.schedule.add(agent)
+            self.grid.place_agent(agent, pos)
+        
+
+    def _general_set_agent_roop(self,pos,x_i,y_i,z_i):
+        if (z_i == self.space_z_min) or (z_i == self.space_z_max) or (x_i == self.space_x_min) or (x_i == self.space_x_max) or (y_i == self.space_y_min) or (y_i == self.space_y_max):
+            agent = HeatSource(self.next_id(),self,pos,30,1)
+        else:
+            agent = Space(self.next_id(),self,pos,random.uniform(18, 20))
+        self.schedule.add(agent)
+        self.grid.place_agent(agent, pos)
+        
+
+    def _init_agents_position(self):
+        base_point = [value for value in self.layout_data if (value["x"] != self.space_x_min-2) and (value["y"] != self.space_y_min-2) and (value["x"] != self.space_x_max-4) and (value["y"] != self.space_y_max-4)][0]
+
+        if len(base_point) == 0:
+            x_condition = ""
+            y_condition = ""
+        else:
+            for value in self.layout_data:
+                if value["x"] == base_point["x"]:
+                    if value["y"] <= base_point["y"]:
+                        y_condition = "small"
                     else:
-                        agent = Space(self.next_id(),self,pos,random.uniform(18, 20))
-                    self.schedule.add(agent)
-                    self.grid.place_agent(agent, pos)
+                        y_condition = "big"
+                if value["y"] == base_point["y"]:
+                    if value["x"] <= base_point["x"]:
+                        x_condition = "big"
+                    else:
+                        x_condition = "small"
+            base_point["x"] += 3
+            base_point["y"] += 3
+
+        for x_i in range(self.space_x_min,self.space_x_max + 1):
+            for y_i in range(self.space_y_min,self.space_y_max + 1):
+                for z_i in range(self.space_z_min,self.space_z_max + 1):
+                    pos = (x_i,y_i,z_i)
+                    if x_condition == "big" and y_condition == "big":
+                        if (x_i > base_point["x"] and y_i > base_point["y"]):
+                            if (x_i == base_point["x"] + 1) or (y_i == base_point["y"] + 1):
+                                if  z_i > 0 and z_i < 4:
+                                    agent = HeatSource(self.next_id(),self,pos,30,1)
+                                    self.schedule.add(agent)
+                                    self.grid.place_agent(agent, pos)
+                        else:
+                            self._general_set_agent_roop(pos,x_i,y_i,z_i)
+                    elif x_condition == "big" and y_condition == "small":
+                        if (x_i > base_point["x"] and y_i < base_point["y"]):
+                            if (x_i == base_point["x"] + 1) or (y_i == base_point["y"] - 1):
+                                if  z_i > 0 and z_i < 4:
+                                    agent = HeatSource(self.next_id(),self,pos,30,1)
+                                    self.schedule.add(agent)
+                                    self.grid.place_agent(agent, pos)
+                        else:
+                            self._general_set_agent_roop(pos,x_i,y_i,z_i)
+                    elif x_condition == "small" and y_condition == "big":
+                        if (x_i < base_point["x"] and y_i > base_point["y"]):
+                            if (x_i == base_point["x"] - 1) or (y_i == base_point["y"] + 1):
+                                if  z_i > 0 and z_i < 4:
+                                    agent = HeatSource(self.next_id(),self,pos,30,1)
+                                    self.schedule.add(agent)
+                                    self.grid.place_agent(agent, pos)
+                        else:
+                            self._general_set_agent_roop(pos,x_i,y_i,z_i)
+                    elif x_condition == "small" and y_condition == "small":
+                        if (x_i < base_point["x"] and y_i < base_point["y"]):
+                            if (x_i == base_point["x"] - 1) or (y_i == base_point["y"] - 1):
+                                if  z_i > 0 and z_i < 4:
+                                    agent = HeatSource(self.next_id(),self,pos,30,1)
+                                    self.schedule.add(agent)
+                                    self.grid.place_agent(agent, pos)
+                        else:
+                            self._general_set_agent_roop(pos,x_i,y_i,z_i)
+                    else:
+                        self._general_set_agent_roop(pos,x_i,y_i,z_i)
+        self._set_ac_agent()
+
+    def _set_space_param(self):
+        grid_points = self.layout_data
+        x_arr = []
+        y_arr = []
+        for value in grid_points:
+            x_arr.append(value["x"])
+            y_arr.append(value["y"])
+        min_x,max_x = min(x_arr),max(x_arr)
+        min_y,max_y = min(y_arr),max(y_arr)
+        min_z,max_z = 0,4
+
+        self.grid = ContinuousSpace3d(max_x + 6, max_y + 6, max_z, False, min_x, min_y, min_z)
+        self.space_x_min = min_x + 2
+        self.space_y_min = min_y + 2
+        self.space_z_min = min_z
+        self.space_x_max = max_x + 4
+        self.space_y_max = max_y + 4
+        self.space_z_max = max_z
+        self.width = self.space_x_max - self.space_x_min
+        self.height = self.space_y_max - self.space_y_min
+        self.depth = self.space_z_max - self.space_z_min
+
+        self.schedule = SimultaneousActivation(self)
+
+        self._init_agents_position()
 
     def next_control_data(self):
-        self.current_control_data = next(self.control_data)
+        try:
+            self.current_control_data = next(self.control_data)
+        except StopIteration:
+            self.terminate = True
+
 
     def remove_agents(self):
         for agent in self.remove_agents_list:
@@ -266,12 +374,14 @@ class HeatModel(Model):
         self.remove_agents_list = []
 
     def step(self):
-        self.per_time_dic["timestamp"] = self.time.strftime('%Y-%m-%d %H:%M:%S')
-        self.per_time_dic["agent_list"] = []
-        self.schedule.step()
-        if self.schedule.steps%60 == 0:
-            self.next_control_data()
-            self.spaces_agents_list.append(self.per_time_dic)
-        self.remove_agents()
-        self.time += timedelta(seconds=1)
-        self.per_time_dic = {}
+        if not self.terminate:
+            self.per_time_dic["timestamp"] = self.time.strftime('%Y-%m-%d %H:%M:%S')
+            self.per_time_dic["timestamp"] = self.time
+            self.per_time_dic["agent_list"] = []
+            self.schedule.step()
+            if self.per_time_dic["timestamp"].second == 0:
+                self.next_control_data()
+                self.spaces_agents_list.append(self.per_time_dic)
+            self.remove_agents()
+            self.time += timedelta(seconds=1)
+            self.per_time_dic = {}
