@@ -9,40 +9,7 @@ import json
 import math
 import time
 from multiprocessing import Process
-
-class Simulation(Process):
-
-    def __init__(self, num, model, output_folder, floor):
-        """ コンストラクタ
-
-        Args:
-            num ([type]): [description]
-            model ([type]): [description]
-            output_folder ([type]): [description]
-            floor ([type]): [description]
-        """        
-        super().__init__()
-        self.__num = num
-        self.__model = model
-        self.__output_folder = output_folder
-        self.__floor = floor
-
-    def output_agent_json(self):
-        fw = open('{0}/result{1}.json'.format(self.__output_folder,self.__floor),'w')
-        json.dump(self.__model.spaces_agents_list,fw,indent=4)
-
-    def run_simulation(self, num: int, model):
-        for i in tqdm(range(num)):
-            if model.terminate:
-                break
-            else:
-                model.step()
-        return model
-
-    def run(self):
-        self.final_model_states = self.run_simulation(self.__num, self.__model)
-        #self.output_agent_json()
-
+import multiprocessing
 
 class SimulationControl():
 
@@ -63,6 +30,21 @@ class SimulationControl():
         time.sleep(0.1)
         print("Simulation Results Folder: {}".format(self.output_folder))
 
+    def output_agent_json(self):
+        for result in self.output_data:
+            print('{0}/result{1}.json'.format(self.output_folder,result[0]))
+            fw = open('{0}/result{1}.json'.format(self.output_folder,result[0]),'w')
+            json.dump(result[1],fw,indent=4)
+
+    def run_simulation(self,key,model):
+        for i in tqdm(range(self.simulation_step)):
+            if model.terminate:
+                break
+            else:
+                model.step()
+        result = (key,model.spaces_agents_list)
+        return result
+
     def run_all_simulations(self):
         start = time.time()
         self._str_simulation_state()
@@ -78,17 +60,12 @@ class SimulationControl():
 
     def run_all_simulations_multi_process(self):
         start = time.time()
-        processes = []
         self._str_simulation_state()
-        for key,model in self.models_floor_dic.items():
-            process = Simulation(self.simulation_step, model, self.output_folder, key)
-            process.start()
-            processes.append(process)
-        cnt = 1
-        for p in processes:
-            p.join()
-            # self.output_agent_json(key,p.__model)
-            print(p.final_model_states.__model.spaces_agents_list)
+        with multiprocessing.Pool(processes=6) as pool:
+            args = list(zip(self.models_floor_dic.keys(),self.models_floor_dic.values()))
+            self.output_data = pool.starmap(self.run_simulation, args)
+        
+        self.output_agent_json()
         elapsed_time = time.time() - start
         print("Simulation finished!")
         print("Simulation time:{}".format(int(elapsed_time)) + "[sec]")

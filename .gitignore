@@ -3,12 +3,12 @@ controllers/cvt/__pycache__/
 controllers/sml/inc/__pycache__/
 
 # Data files
-bems/
-db/
+# bems/
+# db/
 out/
 
-*.json
-*.csv
+# *.json
+# *.csv
 
 # Cache files
 *.pyc
@@ -27,3 +27,6 @@ LICENSE
 
 # Vagrant files
 .vagrant
+
+# bemsfile
+source/
