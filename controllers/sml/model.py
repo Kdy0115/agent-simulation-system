@@ -16,10 +16,13 @@ class Space(Agent):
         self.pos = pos
         self.temp = temp
         self.energy = self.temp * self.capacity
+        self.neighbors_list = []
 
     def exchange_heat(self):
-        neighbor_spaces = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
-        for other in neighbor_spaces:
+        # neighbor_spaces = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
+        if len(self.neighbors_list) < 1:
+            self.neighbors_list = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
+        for other in self.neighbors_list:
             if other.__class__.__name__ == "Space":
                 sum_heat = abs(self.temp - other.temp) * ALPHA
                 if self.temp > other.temp:
@@ -54,13 +57,12 @@ class HeatSource(Agent):
         else:
             self.capacity = OTHER_SOURCE_HEAT_CAPACITY
         self.energy = self.temp * self.capacity
+        self.neighbors_list = []
 
     def radiant_heat(self):
-        neighbor_spaces = self.model.grid.get_neighbors(
-            self.pos,
-            1,
-            include_center=False)
-        for other in neighbor_spaces:
+        if len(self.neighbors_list) < 1:
+            self.neighbors_list = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
+        for other in self.neighbors_list:
             if other.__class__.__name__ == "Space":
                 sum_heat = abs(self.temp - other.temp) * GAMMA
                 if self.temp > other.temp:
@@ -151,6 +153,17 @@ class AirConditioner(Agent):
         self.read_control_data()
         self.power = 0
 
+    def output_ac_data(self):
+        agent_data = {
+            "id"            : self.unique_id,
+            "ac_id"         :self.ac_id,
+            "observe_temp"  : self.observe_temp,
+            "x"             : self.pos[0],
+            "y"             : self.pos[1],
+            "z"             : self.pos[2],
+        }
+        self.model.per_time_dic["agent_list"].append(agent_data)
+
     def read_control_data(self):
         self.set_temp = float(self.model.current_control_data["設定温度{}".format(self.ac_id)])
         self.mode     = int(self.model.current_control_data["運転モード{}".format(self.ac_id)])
@@ -177,6 +190,7 @@ class AirConditioner(Agent):
         elif self.mode == 2:
             if self.set_temp - observe_temp > 0.5:
                 self.thermo = False
+        self.observe_temp = observe_temp
 
     def switch_mode(self):
         self._switch_thermo()
@@ -200,9 +214,9 @@ class AirConditioner(Agent):
     def step(self):
         if self.model.schedule.steps%60 == 0:
             self.read_control_data()
-            #print("設定温度：{0}　運転モード：{1}　風速：{2}　吹き出し温度：{3}".format(self.set_temp,self.mode,self.verocity,self.release_temp))
         self.switch_mode()
         self.create_heat()
+        self.output_ac_data()
 
 
 class HeatModel(Model):
@@ -376,10 +390,10 @@ class HeatModel(Model):
     def step(self):
         if not self.terminate:
             self.per_time_dic["timestamp"] = self.time.strftime('%Y-%m-%d %H:%M:%S')
-            self.per_time_dic["timestamp"] = self.time
+            # self.per_time_dic["timestamp"] = self.time
             self.per_time_dic["agent_list"] = []
             self.schedule.step()
-            if self.per_time_dic["timestamp"].second == 0:
+            if self.time.second == 0:
                 self.next_control_data()
                 self.spaces_agents_list.append(self.per_time_dic)
             self.remove_agents()
