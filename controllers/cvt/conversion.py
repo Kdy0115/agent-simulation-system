@@ -26,18 +26,23 @@ class DataSet():
 
         self.simulation_step = config_simulation["Simulation_time"]
         self.laytout_file_path = config_layout["Lyaout_floor_file_path"]
+        self.heat_source_file_path = config_layout["Heat_source_file_path"]
         self.output_folder = config_simulation["Output_folder_path"]
         
-        self.floors = [3,4,5]
+        # self.floors = [3,4,5]
+        self.floors = [3,4]
         self.init_bems_data = []
         self.control_data = []
         self.layout_data = []
 
+        self.create_output_folder()
+
     def create_output_folder(self) -> None:
         """ Create a folder for output file（結果出力ファイル用のフォルダを作成）
         """
-        if not os.path.exists(self.output_folder):
-            os.makedirs(self.output_folder)
+        dirs = self.output_folder + "cmp/"
+        if not os.path.exists(dirs):
+            os.makedirs(dirs)
 
     def import_all_control_data(self):
         files = glob.glob("{}*.csv".format(self.control_data_folder_path))
@@ -62,44 +67,73 @@ class DataSet():
         f = open(self.laytout_file_path)
         self.layout_data = json.load(f)
         f.close()
-        
 
+    def import_heat_source_data(self):
+        f = open(self.heat_source_file_path)
+        self.source_data = json.load(f)
+        f.close()
 
     def _import_bems_data(self) -> None:
-        csv_file = open(self.bems_file_path, "r", encoding="shift-jis")
-        f = csv.reader(csv_file)
-        header = next(f)
-        data = next(f)
-        self.start_time = data[0]
+        def _format_time(str_time):
+            time_str = str_time.split()
+            date_arr = time_str[0].split("/")
+            year = date_arr[0]
+            month = date_arr[1] if len(date_arr[1]) > 1 else "0"+date_arr[1]
+            day = date_arr[2] if len(date_arr[2]) > 1 else "0"+date_arr[2]
+
+            time_arr = time_str[1].split(":")
+            hour = time_arr[0] if len(time_arr[0]) > 1 else "0"+time_arr[0]
+            minutes = time_arr[1] if len(time_arr[1]) > 1 else "0"+time_arr[1]
+
+            return "{0}/{1}/{2} {3}:{4}:00".format(year,month,day,hour,minutes)
+
+        df = pd.read_csv(self.bems_file_path,encoding="shift-jis")
+        self.start_time = df["時間"][0]
+        df_format = df[df.columns[df.columns != '時間']].astype("float")
+        time_arr = []
+        for i in df["時間"].values:
+            time_arr.append(_format_time(i))
+        df_format["時間"] = time_arr
+
         for floor in self.floors:
             init_bems_data = {}
-            for key,value in zip(header,data):
-                if key == "信号名称":
-                    key = "時間"
-                init_bems_data[key] = value
+            df_a_f = df_format.filter(regex='({}f|外気温|時間)'.format(floor),axis=1)
+            dfs_dict_arr = []
+            init_bems_data = {}
+            for row in range(len(df_a_f)):
+                dfs_dict_arr.append(dict(df_a_f.loc[row]))
             init_bems_data["floor"] = floor
+            init_bems_data["bems_data"] = dfs_dict_arr
             self.init_bems_data.append(init_bems_data)
 
     def _sync_control_data(self) -> dict:
         
         tdatetime = datetime.datetime.strptime(self.start_time.replace("/","-"), '%Y-%m-%d %H:%M')
-        start_time = tdatetime - datetime.timedelta(minutes=1)
-        
-        if start_time.hour < 10:
-            hour = "0{}".format(start_time.hour)
-        else:
-            hour = str(start_time.hour)
+        # start_time = tdatetime - datetime.timedelta(minutes=1)
+        start_time = tdatetime
+
+        # if start_time.hour < 10:
+        #     hour = "0{}".format(start_time.hour)
+        # else:
+        #     hour = str(start_time.hour)
         if start_time.minute < 10:
             minute = "0{}".format(start_time.minute)
         else:
             minute = str(start_time.minute)
         
-        sync_time = "{0}:{1}".format(hour, minute)
+        sync_time = "{0}:{1}".format(start_time.hour, minute)
+
         for control_data in self.control_data:
+            cnt = 0
+            iter_control_data = iter(control_data["control_data"])
             while True:
-                one_data_time = next(control_data["control_data"])
+                one_data_time = next(iter_control_data)
+                cnt += 1
                 if sync_time == one_data_time["時間"]:
                     break
+            if cnt > 1:
+                for i in range(cnt):
+                    next(control_data["control_data"])
 
     def integrate_files(self) -> None:
         self.post_data = {
@@ -111,17 +145,49 @@ class DataSet():
         self.import_all_control_data()
         self._sync_control_data()
         self.import_all_layout_data()
+        self.import_heat_source_data()
 
         for l in self.control_data:
             for m in self.layout_data:
                 for n in self.init_bems_data:
-                    if (l["floor"] == m["floor"]) and (m["floor"] == n["floor"]):
-                        one_post_data = {
-                            "init_bems_data": n,
-                            "control_data"  : l["control_data"],
-                            "layout_data"   : m
-                        }
-                        self.post_data["simulation_data"].append(one_post_data)
+                    for o in self.source_data:
+                        if (l["floor"] == m["floor"]) and (m["floor"] == n["floor"]) and (n["floor"] == o["floor"]):
+                            one_post_data = {
+                                "init_bems_data": n,
+                                "control_data"  : l["control_data"],
+                                "layout_data"   : m,
+                                "source_data"   : o,
+                            }
+                            self.post_data["simulation_data"].append(one_post_data)
 
-dataset = DataSet(config_bems, config_control, config_layout, config_simulation)
-dataset.integrate_files()
+    def output_data(self,data):
+        def _output_json(key,data):
+            fw = open('{0}/result{1}.json'.format(self.output_folder,key),'w')
+            json.dump(data,fw,indent=4)
+
+        def _output_complement_data(key,data):
+            # result_arr = sorted(data, key=lambda x: x['ac_id'])
+            result_dic = {}
+            columns = ["time"]
+            values = []
+            for value in data:
+                per_value = {}
+                per_value["time"] = value["timestamp"]
+                for i in value["agent_list"]:
+                    if "ac_id" in i:
+                        if not i["ac_id"]+"吸込温度" in columns:
+                            columns.append(i["ac_id"]+"吸込温度")
+                        per_value[i["ac_id"]+"吸込温度"] = i["observe_temp"]
+                values.append(per_value)
+
+            with open('{0}cmp/result{1}.csv'.format(self.output_folder,key), 'w',encoding='shift_jis') as csv_file:
+                fieldnames = columns
+                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                writer.writeheader()
+                for row in values:
+                    writer.writerow(row)
+                
+        for result in data:
+            _output_json(result[0],result[1])
+            _output_complement_data(result[0],result[1])
+

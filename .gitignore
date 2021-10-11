@@ -30,3 +30,7 @@ LICENSE
 
 # bemsfile
 source/
+bems/
+
+# db file
+db/
