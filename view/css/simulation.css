@@ -1,0 +1,69 @@
+.config-start-button{
+    margin-left:35%;
+    margin-bottom:60px;
+    width:600px;
+    height: 100px;
+    line-height: 100px;
+    text-align: center;
+    margin-top:60px;
+}
+.config-start-button.is-hidden {
+    display: none;
+}
+
+.config-stop-button{
+    background-color: #ef5350;
+    margin-left:35%;
+    margin-bottom:60px;
+    width:600px;
+    height: 100px;
+    line-height: 100px;
+    text-align: center;
+    margin-top:60px;
+}
+.config-stop-button.is-hidden {
+    display: none;
+}
+
+.message-start {
+    height:80px;
+    text-align:center;
+    color: white;
+    padding: 20px;
+    background: #26a69a;
+    border: 2px  #26a69a solid;
+    position: fixed;
+    z-index: 1000;
+    margin-left: 42.5%;
+    margin-top:115px;
+    font-size:20px;
+    
+    display:none;
+}
+
+.message-stop {
+    height:80px;
+    text-align:center;
+    color: white;
+    padding: 20px;
+    background: #ef5350;
+    border: 2px  #ef5350 solid;
+    position: fixed;
+    z-index: 1000;
+    margin-left: 42.5%;
+    margin-top:115px;
+    font-size:20px;
+    
+    display:none;
+}
+
+#simulation-console ul{
+    padding-top: 15px;
+}
+
+#simulation-console li {
+    list-style: none;
+    padding-left: 30px;
+    font-size: 24px;
+  }
+#simulation-console li:before { content:"> "; }

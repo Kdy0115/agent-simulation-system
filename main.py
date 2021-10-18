@@ -6,11 +6,16 @@ import time
 import multiprocessing as mp
 from tqdm import tqdm
 
-dataset = DataSet(config_bems, config_control, config_layout, config_simulation)
+dataset = DataSet(config_bems, config_control, config_layout, config_simulation, config_mp)
 dataset.integrate_files()
 
-
 simulation = SimulationControl(dataset.post_data)
-# simulation.run_all_simulations()
-result = simulation.run_all_simulations_multi_process()
-dataset.output_data(result)
+
+if dataset.mp_flag:
+    if __name__ == '__main__':
+        mp.freeze_support()
+        result = simulation.run_all_simulations_multi_process()
+        dataset.output_data(result)
+else:
+    result = simulation.run_all_simulations()
+    dataset.output_data(result)

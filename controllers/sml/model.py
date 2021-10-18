@@ -38,6 +38,7 @@ class Space(Agent):
             "x"     : self.pos[0],
             "y"     : self.pos[1],
             "z"     : self.pos[2],
+            "class" : "space"
         }
         self.model.per_time_dic["agent_list"].append(agent_data)
 
@@ -159,11 +160,22 @@ class HeatCharge(Agent):
                             self.energy  -= sum_heat
                             self.temp    -= sum_heat / SPACE_HEAT_CAPACITY
 
+    def output_space_agent(self):
+        agent_data = {
+            "id"    : self.unique_id,
+            "temp"  : self.temp,
+            "x"     : self.pos[0],
+            "y"     : self.pos[1],
+            "z"     : self.pos[2],
+            "class" : "heat_charge"
+        }
+        self.model.per_time_dic["agent_list"].append(agent_data)
 
     def step(self):
         self.move()
         self.convection_heat()
         self.add_remove_agents()
+        self.output_space_agent()
 
 class AirConditioner(Agent):
     """ An agent with fixed initial wealth."""
@@ -187,6 +199,9 @@ class AirConditioner(Agent):
             "x"             : self.pos[0],
             "y"             : self.pos[1],
             "z"             : self.pos[2],
+            "release_temp"  : self.release_temp,
+            "mode"          : self.mode,
+            "setting_temp"  : self.set_temp,
         }
         self.model.per_time_dic["agent_list"].append(agent_data)
 
@@ -213,9 +228,13 @@ class AirConditioner(Agent):
         if self.mode == 1:
             if observe_temp - self.set_temp > 0.5:
                 self.thermo = False
+            else:
+                self.thermo = True
         elif self.mode == 2:
             if self.set_temp - observe_temp > 0.5:
                 self.thermo = False
+            else:
+                self.thermo = True
         self.observe_temp = observe_temp
 
     def switch_mode(self):
@@ -238,7 +257,7 @@ class AirConditioner(Agent):
                 self.model.schedule.add(heat)
                 self.model.grid.place_agent(heat, self.pos)
                 self.power += INIT_AC_ENERGY * abs(self.release_temp - self.set_temp)
-                print("熱荷温度：{0}熱荷エネルギー{1}".format(heat.temp,heat.energy))
+                # print("熱荷温度：{0}熱荷エネルギー{1}".format(heat.temp,heat.energy))
 
 
     def see_class(self):
@@ -253,14 +272,12 @@ class AirConditioner(Agent):
         print("設定温度：{}".format(self.set_temp))
         print("風速：{}".format(self.verocity))
 
-
     def step(self):
         if self.model.schedule.steps%60 == 0:
             self.read_control_data()
-        self.switch_mode()
-        if self.model.schedule.steps%3600 == 0:
-            self.see_class()
-        # self.create_heat()
+            self.switch_mode()
+        #self.see_class()
+        self.create_heat()
         self.output_ac_data()
 
 
@@ -306,6 +323,7 @@ class HeatModel(Model):
 
         self.remove_agents_list = []
         self.spaces_agents_list = []
+        self.heat_charge_agents_list = []
         self.ac_agents_list = []
         self.per_time_dic = {}
 
@@ -481,6 +499,8 @@ class HeatModel(Model):
             self.grid.remove_agent(agent)
         self.remove_agents_list = []
 
+    def print_state(self):
+        print("時間：{}".format(self.time))
 
     def step(self):
         if not self.terminate:
@@ -492,6 +512,7 @@ class HeatModel(Model):
             if self.time.second == 0:
                 self.next_control_data()
                 self.spaces_agents_list.append(self.per_time_dic)
+                # self.print_state()
             # print(self.schedule.get_agent_count())
             self.remove_agents()
             self.time += timedelta(seconds=1)

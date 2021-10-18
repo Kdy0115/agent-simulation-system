@@ -6,6 +6,7 @@ import csv
 import datetime
 import glob
 from controllers.cvt.inc.cons import FLOOR5_COLUMN_NAME
+import copy
 # from inc.cons import FLOOR5_COLUMN_NAME
 
 config_ini = configparser.ConfigParser()
@@ -15,10 +16,10 @@ config_bems       = config_ini["BEMS"]
 config_control    = config_ini["CONTROL"]
 config_simulation = config_ini["SIMULATION"]
 config_layout     = config_ini["LAYOUT"]
-
+config_mp         = config_ini["CALCULATION"]
 
 class DataSet():
-    def __init__(self, config_bems: str, config_control: str, config_layout: str, config_simulation: str,) -> None:
+    def __init__(self, config_bems: str, config_control: str, config_layout: str, config_simulation: str, mp: str) -> None:
 
         self.bems_file_path = config_bems["BEMS_file_path"]
         
@@ -28,9 +29,13 @@ class DataSet():
         self.laytout_file_path = config_layout["Lyaout_floor_file_path"]
         self.heat_source_file_path = config_layout["Heat_source_file_path"]
         self.output_folder = config_simulation["Output_folder_path"]
+
+        self.mp_flag = True if mp["multiprocess"] == "True" else False
         
         # self.floors = [3,4,5]
         self.floors = [3,4]
+        # self.floors = [3]
+        
         self.init_bems_data = []
         self.control_data = []
         self.layout_data = []
@@ -109,13 +114,8 @@ class DataSet():
     def _sync_control_data(self) -> dict:
         
         tdatetime = datetime.datetime.strptime(self.start_time.replace("/","-"), '%Y-%m-%d %H:%M')
-        # start_time = tdatetime - datetime.timedelta(minutes=1)
         start_time = tdatetime
 
-        # if start_time.hour < 10:
-        #     hour = "0{}".format(start_time.hour)
-        # else:
-        #     hour = str(start_time.hour)
         if start_time.minute < 10:
             minute = "0{}".format(start_time.minute)
         else:
@@ -125,15 +125,15 @@ class DataSet():
 
         for control_data in self.control_data:
             cnt = 0
-            iter_control_data = iter(control_data["control_data"])
+            iter_control_data = copy.deepcopy(iter(control_data["control_data"]))
             while True:
                 one_data_time = next(iter_control_data)
                 cnt += 1
                 if sync_time == one_data_time["時間"]:
                     break
             if cnt > 1:
-                for i in range(cnt):
-                    next(control_data["control_data"])
+                for i in range(cnt-1):
+                    a = next(control_data["control_data"])
 
     def integrate_files(self) -> None:
         self.post_data = {
