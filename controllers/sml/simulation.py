@@ -54,15 +54,19 @@ class SimulationControl():
     def run_all_simulations(self):
         start = time.time()
         self._str_simulation_state()
+        result_arr = []
         for key,model in self.models_floor_dic.items():
             for i in tqdm(range(self.simulation_step)):
-                if model.terminate:
+                if model.terminate or stop_flag:
                     break
                 else:
                     model.step()
+            result_arr.append((key,model.spaces_agents_list))
         elapsed_time = time.time() - start
         print("Simulation finished!")
         print("Simulation time:{}".format(int(elapsed_time)) + "[sec]")
+
+        return result_arr
 
     def run_all_simulations_multi_process(self):
         start = time.time()
@@ -70,7 +74,7 @@ class SimulationControl():
         args = list(zip(self.models_floor_dic.keys(),self.models_floor_dic.values(),range(3)))
         L = len(args)
         
-        with mp.Pool() as pool:
+        with mp.Pool() as pool: 
             self.output_data = pool.starmap(self.run_simulation, args)
         print("\n" * L)
         

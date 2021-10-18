@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Thermal Environment Simulator</title>
+
+    <!-- Library import -->
+    <link rel="stylesheet" href="materialize/css/materialize.css">
+    <link rel="stylesheet" href="css/index.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script type="text/javascript" src="/eel.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div class="content-all">
+  <!-- ナビゲーションメニュー-->
+    <nav>
+      <div class="nav-wrapper blue-grey darken-4">
+        <a href="index.html" class="brand-logo">Thermal Environment Simulator</a>
+        <ul id="nav-mobile" class="menu-ul right hide-on-med-and-down">
+          <li class="menu-list"><a class='dropdown-trigger' href="#"data-target='dropdown1'>設定</a></li>
+          <li class="menu-list"><a class='dropdown-trigger' href="#"data-target='dropdown2'>シミュレーション</a></li>
+          <li class="menu-list"><a class='dropdown-trigger' href="#"data-target='dropdown3'>分析</a></li>
+        </ul>
+      </div>
+      <ul id='dropdown1' class='dropdown-content'>
+        <li><a class="blue-grey-text darken-4" href="configuration.html">初期設定</a></li>
+        <li><a class="blue-grey-text darken-4" href="configuration.html">レイアウト設定</a></li>
+      </ul>
+      <ul id='dropdown2' class='dropdown-content'>
+        <li><a class="blue-grey-text darken-4" href="simulation.html">実行</a></li>
+        <li><a class="blue-grey-text darken-4" href="confirm.html">結果確認</a></li>
+      </ul>
+      <ul id='dropdown3' class='dropdown-content'>
+        <li><a class="blue-grey-text darken-4" href="analytics.html">評価</a></li>
+        <li><a class="blue-grey-text darken-4" href="analytics.html">チューニング</a></li>
+      </ul>
+    </nav>
+
+    <div class="message">保存しました</div>
+  <!-- コンテンツ-->
+  <div id="content" style="padding-top:5%;">
+    <div id="title">
+        <h5 id="title-text" class="left-align">初期設定</h5>
+    </div>
+    <!-- フォーム-->
+    <div id="input-form">
+       <div class="row">
+        <div class="col s12">
+          <div class="row">
+            <div class="input-field col s5">
+                <input type="text" id="autocomplete-input" class="autocomplete">
+                <label for="autocomplete-input">シミュレーション回数（分）</label>
+            </div>
+            <div class="input-field col s5 offset-s1">
+                <input type="text" id="autocomplete-input" class="autocomplete">
+                <label for="autocomplete-input">出力先フォルダ名</label>
+            </div>
+            <div class="input-field col s5">
+                <input type="text" id="autocomplete-input" class="autocomplete">
+                <label for="autocomplete-input">BEMSファイル名</label>
+            </div>
+            <div class="input-field col s5 offset-s1">
+                <input type="text" id="autocomplete-input" class="autocomplete">
+                <label for="autocomplete-input">制御計画フォルダ名</label>
+            </div>
+            <div class="input-field col s5">
+                <input type="text" id="autocomplete-input" class="autocomplete">
+                <label for="autocomplete-input">熱源情報フォルダ名</label>
+            </div>
+            <div class="input-field col s5 offset-s1">
+                <input type="text" id="autocomplete-input" class="autocomplete">
+                <label for="autocomplete-input">レイアウト情報フォルダ名</label>
+            </div>               
+            <div class="input-field col s12 input-last">
+              <div class="input-field col s5">
+                <select>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+                <label>マルチプロセス計算</label>
+              </div>
+              <div class="config-save">
+                <a id="config-save-button" onclick="saveConfigure();" style="font-size:24px;"class="waves-effect waves-light btn col s5 offset-s1">保存</a>
+            </div>    
+            </div>                                                                
+          </div>
+        </div>
+       </div>
+    </div>
+  </div>
+
+  <!-- フッター-->
+  <div class="footer">
+    <footer class="page-footer blue-grey darken-4">
+          <div class="container">
+            <div class="row">
+              <div class="col l6 s12">
+                <h5 class="white-text">Footer Content</h5>
+                <p class="grey-text text-lighten-4">You can use rows and columns here to organize your footer content.</p>
+              </div>
+              <div class="col l4 offset-l2 s12">
+                <h5 class="white-text">Links</h5>
+                <ul>
+                  <li><a class="grey-text text-lighten-3" href="#!">Link 1</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#!">Link 2</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#!">Link 3</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#!">Link 4</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="footer-copyright">
+            <div class="container">
+            © 2014 Copyright Text
+            <a class="grey-text text-lighten-4 right" href="#!">More Links</a>
+            </div>
+          </div>
+        </footer>
+  </div>
+    </div>
+<script type="text/javascript" src="js/index.js"></script>
+<script src="materialize/js/materialize.js"></script>
+</body>
+</html>
