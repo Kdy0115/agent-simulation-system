@@ -18,6 +18,8 @@ config_simulation = config_ini["SIMULATION"]
 config_layout     = config_ini["LAYOUT"]
 config_mp         = config_ini["CALCULATION"]
 
+uni_code_set = "utf-8-sig"
+
 class DataSet():
     def __init__(self, config_bems: str, config_control: str, config_layout: str, config_simulation: str, mp: str) -> None:
 
@@ -33,8 +35,8 @@ class DataSet():
         self.mp_flag = True if mp["multiprocess"] == "True" else False
         
         # self.floors = [3,4,5]
-        self.floors = [3,4]
-        # self.floors = [3]
+        # self.floors = [3,4]
+        self.floors = [5]
         
         self.init_bems_data = []
         self.control_data = []
@@ -53,7 +55,7 @@ class DataSet():
         files = glob.glob("{}*.csv".format(self.control_data_folder_path))
         for item,floor in zip(files,self.floors):
             control_data_dic = {}
-            f = open(item,'r',encoding='shift-jis')
+            f = open(item,'r',encoding=uni_code_set)
             data_list = []
             data = csv.DictReader(f)
             while True:
@@ -80,19 +82,24 @@ class DataSet():
 
     def _import_bems_data(self) -> None:
         def _format_time(str_time):
-            time_str = str_time.split()
-            date_arr = time_str[0].split("/")
-            year = date_arr[0]
-            month = date_arr[1] if len(date_arr[1]) > 1 else "0"+date_arr[1]
-            day = date_arr[2] if len(date_arr[2]) > 1 else "0"+date_arr[2]
+            
+            if len(str_time) == 19:
+                str_time = str_time.replace("-","/")
+                return str_time
+            else:
+                time_str = str_time.split()
+                date_arr = time_str[0].split("/")
+                year = date_arr[0]
+                month = date_arr[1] if len(date_arr[1]) > 1 else "0"+date_arr[1]
+                day = date_arr[2] if len(date_arr[2]) > 1 else "0"+date_arr[2]
 
-            time_arr = time_str[1].split(":")
-            hour = time_arr[0] if len(time_arr[0]) > 1 else "0"+time_arr[0]
-            minutes = time_arr[1] if len(time_arr[1]) > 1 else "0"+time_arr[1]
+                time_arr = time_str[1].split(":")
+                hour = time_arr[0] if len(time_arr[0]) > 1 else "0"+time_arr[0]
+                minutes = time_arr[1] if len(time_arr[1]) > 1 else "0"+time_arr[1]
 
-            return "{0}/{1}/{2} {3}:{4}:00".format(year,month,day,hour,minutes)
+                return "{0}/{1}/{2} {3}:{4}:00".format(year,month,day,hour,minutes)
 
-        df = pd.read_csv(self.bems_file_path,encoding="shift-jis")
+        df = pd.read_csv(self.bems_file_path,encoding=uni_code_set)
         self.start_time = df["時間"][0]
         df_format = df[df.columns[df.columns != '時間']].astype("float")
         time_arr = []
@@ -113,16 +120,25 @@ class DataSet():
 
     def _sync_control_data(self) -> dict:
         
-        tdatetime = datetime.datetime.strptime(self.start_time.replace("/","-"), '%Y-%m-%d %H:%M')
-        start_time = tdatetime
-
-        if start_time.minute < 10:
-            minute = "0{}".format(start_time.minute)
+        if "-" in self.start_time:
+            tdatetime = datetime.datetime.strptime(self.start_time[:-3],'%Y-%m-%d %H:%M')
+            start_time = tdatetime
+            sync_time = str(start_time)
         else:
-            minute = str(start_time.minute)
-        
-        sync_time = "{0}:{1}".format(start_time.hour, minute)
+            tdatetime = datetime.datetime.strptime(self.start_time.replace("/","-"), '%Y-%m-%d %H:%M')
+            start_time = tdatetime
+            if start_time.hour < 10:
+                hour = "0{}".format(start_time.hour)
+            else:
+                hour = str(start_time.hour)
 
+            if start_time.minute < 10:
+                minute = "0{}".format(start_time.minute)
+            else:
+                minute = str(start_time.minute)
+        
+            sync_time = "{0}:{1}".format(hour, minute)
+        
         for control_data in self.control_data:
             cnt = 0
             iter_control_data = copy.deepcopy(iter(control_data["control_data"]))
@@ -180,7 +196,7 @@ class DataSet():
                         per_value[i["ac_id"]+"吸込温度"] = i["observe_temp"]
                 values.append(per_value)
 
-            with open('{0}cmp/result{1}.csv'.format(self.output_folder,key), 'w',encoding='shift_jis') as csv_file:
+            with open('{0}cmp/result{1}.csv'.format(self.output_folder,key), 'w',encoding=uni_code_set) as csv_file:
                 fieldnames = columns
                 writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
                 writer.writeheader()
