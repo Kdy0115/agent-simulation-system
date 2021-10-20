@@ -206,9 +206,9 @@ class AirConditioner(Agent):
         self.model.per_time_dic["agent_list"].append(agent_data)
 
     def read_control_data(self):
-        self.set_temp = float(self.model.current_control_data["設定温度{}".format(self.ac_id)])
-        self.mode     = int(self.model.current_control_data["運転モード{}".format(self.ac_id)])
-        verocity_label = int(self.model.current_control_data["風速{}".format(self.ac_id)])
+        self.set_temp = float(self.model.current_control_data["{}設定温度".format(self.ac_id)])
+        self.mode     = int(self.model.current_control_data["{}運転モード".format(self.ac_id)])
+        verocity_label = int(self.model.current_control_data["{}風速".format(self.ac_id)])
         if verocity_label == 1:
             verocity = 0.5
         elif verocity_label == 2:
