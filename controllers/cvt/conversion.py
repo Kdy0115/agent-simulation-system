@@ -196,7 +196,7 @@ class DataSet():
                         per_value[i["ac_id"]+"吸込温度"] = i["observe_temp"]
                 values.append(per_value)
 
-            with open('{0}cmp/result{1}.csv'.format(self.output_folder,key), 'w',encoding=uni_code_set) as csv_file:
+            with open('{0}cmp/result{1}.csv'.format(self.output_folder,key), 'w',encoding=uni_code_set,newline="") as csv_file:
                 fieldnames = columns
                 writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
                 writer.writeheader()
