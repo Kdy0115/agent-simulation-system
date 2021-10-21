@@ -1,13 +1,13 @@
 #!python3.5
 import pandas as pd
 
-pypath = 'data/out/0705/result_3.csv'
-pydf = pd.read_csv(pypath,engine='python',header=None,usecols=[2,3,4,5,6,7,8,9,10,11])
+pypath = 'data/out/0701/result5.csv'
+pydf = pd.read_csv(pypath,engine='python',header=None,usecols=[1,2,3,4,5,6,7,8,9,10])
 time = pd.read_csv(pypath,engine='python',header=None,usecols=[1])
 #print(pydf)
 #print(len(pydf))
 
-artpath = 'data/artisoc/07-05/result.xlsx'
+artpath = 'data/artisoc/07-01/result.xlsx'
 artdf = pd.read_excel(artpath,header=None,usecols=[4,5,6,7,8,9,10,11,12,13])
 #print(artdf)
 #print(len(artdf))
@@ -31,8 +31,7 @@ else:
 if 60*period > number_of_data-1:
     print('データ数が不足しています。存在するデータ数の中で最小の物に合わせて出力します。')
 
-
-
+print(pydf[10][4])
 
 
 #print(time)
@@ -50,16 +49,16 @@ pydata9_0705 = []
 
 for i in range(1,number_of_data):
     timedata_0705.append(time[1][i])
-    pydata0_0705.append(float(pydf[2][i]))
-    pydata1_0705.append(float(pydf[3][i]))
-    pydata2_0705.append(float(pydf[4][i]))
-    pydata3_0705.append(float(pydf[5][i]))
-    pydata4_0705.append(float(pydf[6][i]))
-    pydata5_0705.append(float(pydf[7][i]))
-    pydata6_0705.append(float(pydf[8][i]))
-    pydata7_0705.append(float(pydf[9][i]))
-    pydata8_0705.append(float(pydf[10][i]))
-    pydata9_0705.append(float(pydf[11][i]))
+    pydata0_0705.append(float(pydf[1][i]))
+    pydata1_0705.append(float(pydf[2][i]))
+    pydata2_0705.append(float(pydf[3][i]))
+    pydata3_0705.append(float(pydf[4][i]))
+    pydata4_0705.append(float(pydf[5][i]))
+    pydata5_0705.append(float(pydf[6][i]))
+    pydata6_0705.append(float(pydf[7][i]))
+    pydata7_0705.append(float(pydf[8][i]))
+    pydata8_0705.append(float(pydf[9][i]))
+    pydata9_0705.append(float(pydf[10][i]))
 
 #print(pydata0_0705[1])
 
@@ -179,7 +178,7 @@ y2_9 = y2make(y1_9,artdata9_0705,pydata9_0705,sourcedata5_0705)
 #print(type(y2_1[0][0]))
 
 y1_data = {}
-y1_data[time] = x
+y1_data['time'] = x
 y1_data[0] = y1_0
 y1_data[1] = y1_1
 y1_data[2] = y1_2
@@ -192,7 +191,7 @@ y1_data[8] = y1_8
 y1_data[9] = y1_9
 
 y2_data = {}
-y2_data[time] = x
+y2_data['time'] = x
 y2_data[0] = y2_0
 y2_data[1] = y2_1
 y2_data[2] = y2_2
@@ -203,3 +202,5 @@ y2_data[6] = y2_6
 y2_data[7] = y2_7
 y2_data[8] = y2_8
 y2_data[9] = y2_9
+
+#print(y1_data[0])
