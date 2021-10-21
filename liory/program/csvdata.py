@@ -1,18 +1,20 @@
 #!python3.5
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
-pypath = 'data/out/0705/result_3.csv'
+pypath = 'out/0705/result_3.csv'
 pydf = pd.read_csv(pypath,engine='python',header=None,usecols=[2,3,4,5,6,7,8,9,10,11])
 time = pd.read_csv(pypath,engine='python',header=None,usecols=[1])
 #print(pydf)
 #print(len(pydf))
 
-artpath = 'data/artisoc/07-05/result.xlsx'
+artpath = 'artisoc/07-05/result.xlsx'
 artdf = pd.read_excel(artpath,header=None,usecols=[4,5,6,7,8,9,10,11,12,13])
 #print(artdf)
 #print(len(artdf))
 
-sourcepath = 'data/source/TREND_20210701_20210710.xlsx'
+sourcepath = 'source/TREND_20210701_20210710.xlsx'
 sourcedf = pd.read_excel(sourcepath,header=None,usecols=[83,84,85,86,87])
 
 startday = 5
@@ -168,5 +170,16 @@ y2_7 = y2make(y1_7,artdata7_0705,pydata7_0705,sourcedata4_0705)
 y2_8 = y2make(y1_8,artdata8_0705,pydata8_0705,sourcedata4_0705)
 y2_9 = y2make(y1_9,artdata9_0705,pydata9_0705,sourcedata5_0705)
 
-#print(y1_1)
+# print(len(y1_1[0]),len(y1_1[1]),len(y1_1[2]))
+# print(y1_1[1])
 #print(y2_1)
+x = [i for i in range(len(x))]
+print(y1_0[0][0],y1_0[1][0],y1_0[2][0])
+# print(x)
+
+plt.plot(x,y1_1[0])
+plt.plot(x,[float(i) for i in y1_1[1]])
+plt.plot(x,[float(i) for i in y1_1[2][:-1]])
+# plt.plot(x,y1_1[2][:-1])
+
+plt.show()
