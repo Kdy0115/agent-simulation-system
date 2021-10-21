@@ -15,7 +15,7 @@ artdf = pd.read_excel(artpath,header=None,usecols=[4,5,6,7,8,9,10,11,12,13])
 sourcepath = 'data/source/TREND_20210701_20210710.xlsx'
 sourcedf = pd.read_excel(sourcepath,header=None,usecols=[83,84,85,86,87])
 
-startday = 5
+startday = 1
 starthour = 0
 period = 24
 startpoint = 11+(startday-1)*1440+60*starthour
