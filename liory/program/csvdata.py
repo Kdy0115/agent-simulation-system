@@ -18,7 +18,7 @@ sourcedf = pd.read_excel(sourcepath,header=None,usecols=[83,84,85,86,87])
 startday = 5
 starthour = 0
 period = 24
-startpoint = 11+startday*1440+60*starthour
+startpoint = 11+(startday-1)*1440+60*starthour
 
 
 if len(pydf) > len(artdf):
@@ -177,3 +177,29 @@ y2_9 = y2make(y1_9,artdata9_0705,pydata9_0705,sourcedata5_0705)
 
 #print(type(y1_1[0][0]))
 #print(type(y2_1[0][0]))
+
+y1_data = {}
+y1_data[time] = x
+y1_data[0] = y1_0
+y1_data[1] = y1_1
+y1_data[2] = y1_2
+y1_data[3] = y1_3
+y1_data[4] = y1_4
+y1_data[5] = y1_5
+y1_data[6] = y1_6
+y1_data[7] = y1_7
+y1_data[8] = y1_8
+y1_data[9] = y1_9
+
+y2_data = {}
+y2_data[time] = x
+y2_data[0] = y2_0
+y2_data[1] = y2_1
+y2_data[2] = y2_2
+y2_data[3] = y2_3
+y2_data[4] = y2_4
+y2_data[5] = y2_5
+y2_data[6] = y2_6
+y2_data[7] = y2_7
+y2_data[8] = y2_8
+y2_data[9] = y2_9
