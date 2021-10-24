@@ -57,7 +57,7 @@ class SimulationControl():
         result_arr = []
         for key,model in self.models_floor_dic.items():
             for i in tqdm(range(self.simulation_step)):
-                if model.terminate or stop_flag:
+                if model.terminate:
                     break
                 else:
                     model.step()
