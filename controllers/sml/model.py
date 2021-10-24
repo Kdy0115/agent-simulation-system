@@ -92,9 +92,11 @@ class HeatCharge(Agent):
     def __init__(self, unique_id, model, pos, ac, angle):
         super().__init__(unique_id, model)
         self.pos = pos
+        # y-z平面の向き
         self.direction = ac.direction
         self.speed = ac.verocity
         self.temp = ac.release_temp
+        # x-y座標の向き
         self.angle = angle
         self.radius = INIT_HEAT_CHARGE_RADIUS
         self.change_rate = RATE_OF_CHANGE
@@ -112,14 +114,20 @@ class HeatCharge(Agent):
             float(self.pos[2]) - self.speed * math.sin(math.radians(self.direction))
         )
         self.speed  *= self.change_rate
-        self.radius *= (1 + self.change_rate)
-        self.model.grid.move_agent(self,new_pos)
+        if self.radius >= 5:
+            self.radius = 5
+        else:
+            self.radius *= (1 + self.change_rate)
+        
+        if not self.out_of_spaces(new_pos):
+            self.model.grid.move_agent(self,new_pos)
         # if self.out_of_spaces() or self.convergence_verocity() or self.convergence_energy():
         #     self.model.remove_agents_list.append(self)
 
     def add_remove_agents(self):
-        if self.out_of_spaces() or self.convergence_verocity() or self.convergence_energy() or self.check_change_energy():
-            self.model.remove_agents_list.append(self)
+        if self.out_of_spaces(self.pos) or self.convergence_verocity() or self.convergence_energy() or self.check_change_energy():
+            # self.model.remove_agents_list.append(self)
+            self.model.remove_agents_set.add(self.unique_id)
 
     def check_change_energy(self):
         check = self.energy*self.pre_energy <= 0
@@ -132,8 +140,8 @@ class HeatCharge(Agent):
     def convergence_energy(self):
         return abs(self.energy) < 0.0001
             
-    def out_of_spaces(self):
-        x,y,z = self.pos
+    def out_of_spaces(self,pos):
+        x,y,z = pos
         return (x >= self.model.space_x_max or x <= self.model.space_x_min) or (y >= self.model.space_y_max or y <= self.model.space_y_min) or (z >= self.model.space_z_max or z <= self.model.space_z_min)
                 
     def convection_heat(self):
@@ -160,6 +168,60 @@ class HeatCharge(Agent):
                             self.energy  -= sum_heat
                             self.temp    -= sum_heat / SPACE_HEAT_CAPACITY
 
+    def collision_barrier(self):
+        neighbor_barriers = self.model.grid.get_neighbors(self.pos, int(self.radius - 1), include_center=False)
+        for barrier in neighbor_barriers:
+            if barrier.__class__.__name__ == "HeatSource":
+                if (self.energy < 0 and self.temp < barrier.temp) or (self.energy > 0 and self.temp > barrier.temp):
+                    energy = self.energy * GAMMA
+                    barrier.energy += energy
+                    barrier.temp += energy / barrier.capacity
+                    # self.model.remove_agents_list.append(self)
+                    self.model.remove_agents_set.add(self.unique_id)
+                    break
+
+    def heat_collision(self):
+        def _decision_angle(agt1,agt2):
+            if agt1.speed > agt2.speed:
+                angle = agt1.angle
+                speed = agt1.speed
+            else:
+                angle = agt2.angle
+                speed = agt2.speed
+            if agt1.angle != agt2.angle:
+                speed = abs(agt1.speed - agt2.speed)
+            
+            return angle,speed
+            
+
+        neighbor_spaces = self.model.grid.get_neighbors(self.pos, int(self.speed + self.radius), include_center=False)
+        for other in neighbor_spaces:
+            if other.__class__.__name__ == "HeatCharge":
+                d = self.model.grid.get_distance(other.pos, self.pos)
+                # 衝突条件を満たすとき
+                if d < (other.radius + self.radius):
+                    # print(self.temp,other.temp)
+                    angle,speed = _decision_angle(self,other)
+                    if self.radius > other.radius:
+                        self.angle = angle
+                        self.speed = speed
+                        self.energy = (other.energy + self.energy) / 2
+                        # self.temp += other.energy / SPACE_HEAT_CAPACITY
+                        self.temp = (self.temp + other.temp) / 2
+                        # self.model.remove_agents_list.append(other)
+                        self.model.remove_agents_set.add(other.unique_id)
+                        # print(self.temp)
+                    else:
+                        other.angle = angle
+                        other.speed = speed
+                        other.energy = (self.energy + other.energy) / 2
+                        # other.temp += self.energy / SPACE_HEAT_CAPACITY
+                        other.temp = (self.temp + other.temp) / 2
+                        # self.model.remove_agents_list.append(self)
+                        self.model.remove_agents_set.add(self.unique_id)
+                    break
+
+
     def output_space_agent(self):
         agent_data = {
             "id"    : self.unique_id,
@@ -173,6 +235,8 @@ class HeatCharge(Agent):
 
     def step(self):
         self.move()
+        self.heat_collision()
+        self.collision_barrier()
         self.convection_heat()
         self.add_remove_agents()
         self.output_space_agent()
@@ -239,7 +303,7 @@ class AirConditioner(Agent):
 
     def switch_mode(self):
         self._switch_thermo()
-        if self.thermo == True:
+        if self.thermo == True and self.mode != 0:
             self.release_temp = self.observe_temp
             self.mode = 3
         else:
@@ -276,7 +340,7 @@ class AirConditioner(Agent):
         if self.model.schedule.steps%60 == 0:
             self.read_control_data()
             self.switch_mode()
-        #self.see_class()
+        # self.see_class()
         self.create_heat()
         self.output_ac_data()
 
@@ -321,7 +385,8 @@ class HeatModel(Model):
         self.current_control_data = next(self.control_data)
 
 
-        self.remove_agents_list = []
+        # self.remove_agents_list = []
+        self.remove_agents_set = set()
         self.spaces_agents_list = []
         self.heat_charge_agents_list = []
         self.ac_agents_list = []
@@ -494,10 +559,16 @@ class HeatModel(Model):
                 self.bems_data_num += 1
 
     def remove_agents(self):
-        for agent in self.remove_agents_list:
+        remove_list = []
+        for one in self.grid._index_to_agent.values():
+            if one.unique_id in list(self.remove_agents_set):
+                remove_list.append(one)
+
+        for agent in remove_list:
             self.schedule.remove(agent)
             self.grid.remove_agent(agent)
-        self.remove_agents_list = []
+
+        self.remove_agents_set = set()
 
     def print_state(self):
         print("時間：{}".format(self.time))

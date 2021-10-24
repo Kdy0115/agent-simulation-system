@@ -18,7 +18,8 @@ config_simulation = config_ini["SIMULATION"]
 config_layout     = config_ini["LAYOUT"]
 config_mp         = config_ini["CALCULATION"]
 
-uni_code_set = "utf-8-sig"
+# uni_code_set = "utf-8-sig"
+uni_code_set = "shift-jis"
 
 class DataSet():
     def __init__(self, config_bems: str, config_control: str, config_layout: str, config_simulation: str, mp: str) -> None:
@@ -64,7 +65,6 @@ class DataSet():
                 except StopIteration:
                     f.close()
                     break
-            
             control_data_dic["floor"] = floor
             control_data_dic["control_data"]  = iter(data_list)
 
@@ -120,24 +120,28 @@ class DataSet():
 
     def _sync_control_data(self) -> dict:
         
-        if "-" in self.start_time:
-            tdatetime = datetime.datetime.strptime(self.start_time[:-3],'%Y-%m-%d %H:%M')
-            start_time = tdatetime
-            sync_time = str(start_time)
+        # if "-" in self.start_time:
+        # tdatetime = datetime.datetime.strptime(self.start_time.replace("/","-"),'%Y-%m-%d %H:%M')
+        # start_time = tdatetime
+        # sync_time = str(start_time)
+        if "/" in self.start_time:
+            sync_time = str(datetime.datetime.strptime(self.start_time.replace("/","-"),'%Y-%m-%d %H:%M'))
         else:
-            tdatetime = datetime.datetime.strptime(self.start_time.replace("/","-"), '%Y-%m-%d %H:%M')
-            start_time = tdatetime
-            if start_time.hour < 10:
-                hour = "0{}".format(start_time.hour)
-            else:
-                hour = str(start_time.hour)
+            sync_time = self.start_time
+        # else:
+        #     tdatetime = datetime.datetime.strptime(self.start_time.replace("/","-"), '%Y-%m-%d %H:%M')
+        #     start_time = tdatetime
+        #     if start_time.hour < 10:
+        #         hour = "0{}".format(start_time.hour)
+        #     else:
+        #         hour = str(start_time.hour)
 
-            if start_time.minute < 10:
-                minute = "0{}".format(start_time.minute)
-            else:
-                minute = str(start_time.minute)
+        #     if start_time.minute < 10:
+        #         minute = "0{}".format(start_time.minute)
+        #     else:
+        #         minute = str(start_time.minute)
         
-            sync_time = "{0}:{1}".format(hour, minute)
+        #     sync_time = "{0}:{1}".format(hour, minute)
         
         for control_data in self.control_data:
             cnt = 0
@@ -149,7 +153,7 @@ class DataSet():
                     break
             if cnt > 1:
                 for i in range(cnt-1):
-                    a = next(control_data["control_data"])
+                    next(control_data["control_data"])
 
     def integrate_files(self) -> None:
         self.post_data = {
@@ -184,11 +188,11 @@ class DataSet():
         def _output_complement_data(key,data):
             # result_arr = sorted(data, key=lambda x: x['ac_id'])
             result_dic = {}
-            columns = ["time"]
+            columns = ["時間"]
             values = []
             for value in data:
                 per_value = {}
-                per_value["time"] = value["timestamp"]
+                per_value["時間"] = value["timestamp"]
                 for i in value["agent_list"]:
                     if "ac_id" in i:
                         if not i["ac_id"]+"吸込温度" in columns:

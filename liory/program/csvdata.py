@@ -1,24 +1,51 @@
 #!python3.5
+# Artisoc, Python, BEMSの3種類の吸い込み温度を比較するプログラム
+
+# ライブラリ
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import datetime
+import matplotlib.dates as mdates
 
-pypath = 'data/out/0701/result5.csv'
-pydf = pd.read_csv(pypath,engine='python',header=None,usecols=[1,2,3,4,5,6,7,8,9,10])
-time = pd.read_csv(pypath,engine='python',header=None,usecols=[1])
-#print(pydf)
-#print(len(pydf))
+# Pythonファイルパス
+pypath = 'out/result_2021_07_2_fix/cmp/result5.csv'
+# Artisocファイルパス
+artpath = 'artisoc/07-02/result.xlsx'
+# BEMSデータファイルパス
+sourcepath = 'data/src/TREND_20210701_20210710.xlsx'
 
-artpath = 'data/artisoc/07-01/result.xlsx'
-artdf = pd.read_excel(artpath,header=None,usecols=[4,5,6,7,8,9,10,11,12,13])
-#print(artdf)
-#print(len(artdf))
+# 各ファイルをインポート
+# pydf = pd.read_csv(pypath,engine='python',header=None,usecols=[1,2,3,4,5,6,7,8,9,10])
+# time = pd.read_csv(pypath,engine='python',header=None,usecols=[1])
 
-sourcepath = 'source/TREND_20210701_20210710.xlsx'
-sourcedf = pd.read_excel(sourcepath,header=None,usecols=[83,84,85,86,87])
+# Pythonファイルをインポート
+pydf = pd.read_csv(pypath,encoding="shift-jis")
+# Artisocファイルをインポート
+# artdf = pd.read_excel(artpath,header=None,usecols=[4,5,6,7,8,9,10,11,12,13])
+artdf = pd.read_excel(artpath,encoding="shift-jis")
+# BEMSファイルをインポート
+# sourcedf = pd.read_excel(sourcepath,header=None,usecols=[83,84,85,86,87])
+sourcedf = pd.read_excel(sourcepath,encoding="shift-jis")
 
-startday = 1
-starthour = 0
+
+def uniform_time(df_py, df_art, df_bems):
+    """ 各データの時間をpythonデータに合わせる関数
+
+    Args:
+        df_py ([DataFrame]): pythonの結果データを読み込んだDataFrame
+        df_art ([DataFrame]): Artisocの結果データを読み込んだDataFrame
+        df_bems ([DataFrame]): BEMSのデータを読み込んだDataFrame
+
+    Returns:
+        [DataFrame]: 全てのデータを統合して時間を統一したプログラム        
+    """    
+    
+
+
+
+startday = 2
+starthour = 8
 period = 24
 startpoint = 11+(startday-1)*1440+60*starthour
 
@@ -206,3 +233,22 @@ y2_data[8] = y2_8
 y2_data[9] = y2_9
 
 #print(y1_data[0])
+
+x = [i for i in range(len(x))]
+fig, ax = plt.subplots()
+print(type(y1_0[0][0]),type(y1_0[1][0]),type(y1_0[2][0]))
+print(len(y1_0[0]),len(y1_0[1]),len(y1_0[2]))
+ax.plot(x, y1_0[0],label="artisoc")
+ax.plot(x, y1_0[1],label="python")
+# ax.plot(x, y1_0[2][:-1],label="実測値")
+ax.legend(loc="upper left")
+
+print(y1_0[0][0],y1_0[0][1],y1_0[0][2])
+
+# print(type(y2_0[0][0]),type(y2_0[1][0]))
+# print(len(y2_0[0]),len(y2_0[1]))
+# print(y2_0[0][0],y2_0[1][0])
+# print(len(y2_0[0]),len(y2_0[1]))
+# ax.plot(x, y2_0[0])
+# ax.plot(x, y2_0[1])
+plt.show()
