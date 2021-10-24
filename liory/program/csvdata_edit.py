@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import datetime
 import matplotlib.dates as mdates
 import os
+import time
 
 # Pythonファイルパス
 pypath = 'out/result_2021_07_2_fix/cmp/result5.csv'
@@ -36,6 +37,23 @@ artdf = pd.read_excel(artpath,encoding="shift-jis",usecols=[0,4,5,6,7,8,9,10,11,
 # BEMSファイルをインポート
 sourcedf = pd.read_csv(sourcepath,encoding="shift-jis")
 
+
+def confirm_data(df):
+    """ DataFrame内容確認関数
+
+    Args:
+        df ([DataFrame]): 中身を確認したいデータフレーム
+    """    
+
+    time.sleep(2)
+    print("-------------------------------------------")
+    print("＜カラム内容＞")
+    for c in df.columns:
+        print(c)
+    print("＜先頭5件のデータ＞")
+    print(df.head())
+    # 見やすいように一定時間あけた（消してもok）
+    
 
 def adjust_bems_columns(df):
     """ BEMSファイルのカラムを調整する関数
@@ -274,6 +292,8 @@ def main(sourcedf,pydf,artdf):
     # 全データのインテグレート
     df_integrate = uniform_time(pydf,artdf,df_new_source)
 
+    confirm_data(df_integrate)
+
     # 時間以外のデータの文字列を浮動小数点に変換
     for column in df_integrate.columns:
         if column != "時間":
@@ -282,7 +302,9 @@ def main(sourcedf,pydf,artdf):
     # 変換したデータを返す
     return create_graph_data(df_integrate)
 
-
+confirm_data(sourcedf)
+confirm_data(pydf)
+confirm_data(artdf)
 
 result_data = main(sourcedf,pydf,artdf)
 
