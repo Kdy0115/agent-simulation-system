@@ -1,6 +1,18 @@
 #!python3.5
 # Artisoc, Python, BEMSの3種類の吸い込み温度を比較するプログラム
 
+""" コーディング規約
+
+1. 関数名は単語をアンダーバー(_)で接続
+2. 冗長性は解消することを心がける
+3. 同じ処理を行う部分や機能を独立させれる部分はモジュール（関数）化を行う
+4. 処理が中心で単一のファイルで完結するのでクラスは用いない
+5. 関数内の引数、返り値以外の局所変数は先頭にアンダーバー(_)を付ける
+6. 関数、モジュールは引数と返り値、関数自体の説明（docstring）を書く
+7. 6以外の1行1行のアルゴリズムの補足はシャープ(#)でコメントアウトを行う
+
+"""
+
 # ライブラリ
 import pandas as pd
 import numpy as np
@@ -189,32 +201,32 @@ def create_graphs(data):
     # グラフ描画用データの格納リスト
     ax_set_list = []
     # y座標の位置調整用値
-    y_base = 1.0
+    _y_base = 1.0
 
     # simple_dataの場合の処理
     if len(data[0]) == 4:
         # キーの個数がIDに対応
         for i in data.keys():
             # グラフの凡例用の名前
-            l_1 = "artisoc" + str(i)
-            l_2 = "python"  + str(i)
-            l_3 = "実測値"  + str(i)
+            _l_1 = "artisoc" + str(i)
+            _l_2 = "python"  + str(i)
+            _l_3 = "実測値"  + str(i)
 
             # 10個分のグラフを出力するための位置調整
-            x_base = 0.05 if i % 2 == 0 else 0.55
-            width = 0.4
-            height = 0.12
-            y_base -= 0.185 if i % 2 == 0 else 0    
-            ax_set = fig.add_axes([x_base,y_base,width,height])
+            _x_base = 0.05 if i % 2 == 0 else 0.55
+            _width = 0.4
+            _height = 0.12
+            _y_base -= 0.185 if i % 2 == 0 else 0    
+            _ax_set = fig.add_axes([_x_base,_y_base,_width,_height])
 
             # 各データの格納
-            x  = data[i]["timestamp"]
-            y1 = data[i]["artisoc"]
-            y2 = data[i]["python"]
-            y3 = data[i]["bems"]
+            _x  = data[i]["timestamp"]
+            _y1 = data[i]["artisoc"]
+            _y2 = data[i]["python"]
+            _y3 = data[i]["bems"]
 
             # 格納用リストにデータを入れる
-            ax_set_list.append([ax_set,(l_1,l_2,l_3),(x,y1,y2,y3)])
+            ax_set_list.append([_ax_set,(_l_1,_l_2,_l_3),(_x,_y1,_y2,_y3)])
 
         # グラフ種別を格納
         graph_kind = "simple_data"
@@ -222,20 +234,20 @@ def create_graphs(data):
     # gap_dataの場合
     else:
         for i in data.keys():
-            l_1 = "artisoc" + str(i)
-            l_2 = "python"  + str(i)
+            _l_1 = "artisoc" + str(i)
+            _l_2 = "python"  + str(i)
 
-            x_base = 0.05 if i % 2 == 0 else 0.55
-            width = 0.4
-            height = 0.12
-            y_base -= 0.185 if i % 2 == 0 else 0        
-            ax_set = fig.add_axes([x_base,y_base,width,height])
+            _x_base = 0.05 if i % 2 == 0 else 0.55
+            _width = 0.4
+            _height = 0.12
+            _y_base -= 0.185 if i % 2 == 0 else 0        
+            _ax_set = fig.add_axes([_x_base,_y_base,_width,_height])
 
-            x  = data[i]["timestamp"]
-            y1 = data[i]["artisoc"]
-            y2 = data[i]["python"]
+            _x  = data[i]["timestamp"]
+            _y1 = data[i]["artisoc"]
+            _y2 = data[i]["python"]
 
-            ax_set_list.append([ax_set,(l_1,l_2),(x,y1,y2)])
+            ax_set_list.append([_ax_set,(_l_1,_l_2),(_x,_y1,_y2)])
         graph_kind = "gap_data"
         
     # 保存したデータでグラフを描画して画像を保存
@@ -269,6 +281,8 @@ def main(sourcedf,pydf,artdf):
 
     # 変換したデータを返す
     return create_graph_data(df_integrate)
+
+
 
 result_data = main(sourcedf,pydf,artdf)
 
