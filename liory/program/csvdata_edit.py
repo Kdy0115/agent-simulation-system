@@ -23,7 +23,7 @@ import os
 import time
 
 # Pythonファイルパス
-pypath = 'out/result_2021_07_2_fix/cmp/result5.csv'
+pypath = 'out/result_2021_07_2/cmp/result5.csv'
 # Artisocファイルパス
 artpath = 'artisoc/07-02/result.xlsx'
 # BEMSデータファイルパス
@@ -33,10 +33,9 @@ sourcepath = 'data/evaluation/base/2021_7_2/all_bems_data5.csv'
 # Pythonファイルをインポート
 pydf = pd.read_csv(pypath,encoding="shift-jis")
 # Artisocファイルをインポート
-artdf = pd.read_excel(artpath,encoding="shift-jis",usecols=[0,4,5,6,7,8,9,10,11,12,13])
+artdf = pd.read_excel(artpath,encoding="shift-jis",usecols=[0,3,4,5,6,7,8,9,10,11,12])
 # BEMSファイルをインポート
 sourcedf = pd.read_csv(sourcepath,encoding="shift-jis")
-
 
 def confirm_data(df):
     """ DataFrame内容確認関数
@@ -151,7 +150,7 @@ def create_graph_data(df) -> (dict, dict):
             # 時間
             "timestamp" : df["時間"].values,
             # Artisocデータ（IDが一つずれているため加算）
-            "artisoc"   : df["観測温度{}".format(n+1)].values,
+            "artisoc"   : df["観測温度{}".format(n)].values,
             # Pythonデータ
             "python"    : df["5f{}吸込温度".format(n)].values,
             # BEMSデータ
@@ -162,7 +161,7 @@ def create_graph_data(df) -> (dict, dict):
             # 時間
             "timestamp": df["時間"].values,
             # BEMS - Artiscのデータ
-            "artisoc"  : (df["5f{}吸込温度_bems".format(n)] - df["観測温度{}".format(n+1)]).values,
+            "artisoc"  : (df["5f{}吸込温度_bems".format(n)] - df["観測温度{}".format(n)]).values,
             # BEMS - pythonのデータ
             "python"   : (df["5f{}吸込温度_bems".format(n)] - df["5f{}吸込温度".format(n)]).values
         }
