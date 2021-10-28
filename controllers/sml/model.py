@@ -48,13 +48,16 @@ class Space(Agent):
 
 class HeatSource(Agent):
     """ An agent with fixed initial wealth."""
-    def __init__(self, unique_id, model, pos, temp, kind):
+    def __init__(self, unique_id, model, pos, temp, kind, base_ac_id):
         super().__init__(unique_id, model)
         self.pos = pos
         self.temp = temp
         self.kind = kind
+        self.model = model
+        self.base_ac_id = base_ac_id
         if self.kind == 1:
             self.capacity = WINDOW_HEAT_CAPACITY
+        # 室内の熱源のとき
         elif self.kind == 5:
             self.capacity = 1
         else:
@@ -65,8 +68,10 @@ class HeatSource(Agent):
     def radiant_heat(self):
         if len(self.neighbors_list) < 1:
             self.neighbors_list = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
+        # 人間のとき            
         for other in self.neighbors_list:
             if other.__class__.__name__ == "Space":
+                # 室内の熱源のとき
                 if self.kind == 5:
                     sum_heat = abs(self.temp - other.temp) * HUMAN_HEAT_RATIO
                     if self.temp > other.temp:
@@ -84,8 +89,37 @@ class HeatSource(Agent):
                         self.temp  += sum_heat/self.capacity
                         other.energy -= sum_heat
                         other.temp -= sum_heat/other.capacity
+
+    def out_barrier_agent(self):
+        agent_data = {
+            "id"    : self.unique_id,
+            "temp"  : self.temp,
+            "x"     : self.pos[0],
+            "y"     : self.pos[1],
+            "z"     : self.pos[2],
+            "class" : "space"
+        }
+        self.model.per_time_dic["agent_list"].append(agent_data)
+
+    def update_temp(self):
+        # 室内の熱源以外のとき
+        if self.kind != 5:
+            self.temp = self.model.init_bems_data["{}吸込温度".format(self.base_ac_id)]
+            self.energy = self.temp * self.capacity
+            # print("------------------------------------")
+            # print(self.model.time)
+            # print(self.temp,self.model.init_bems_data["{}吸込温度".format(self.base_ac_id)])
+
     def step(self):
-        self.radiant_heat()
+        if ((self.model.time.second == 0)) and ((self.model.time.minute == 0) or (self.model.time.minute == 30)):
+            self.update_temp()
+
+        start_time = datetime(self.model.time.year,self.model.time.month,self.model.time.day,8,0,0)
+        end_time   = datetime(self.model.time.year,self.model.time.month,self.model.time.day,17,0,0)
+        if ((self.kind == 5) and (self.model.time < start_time or self.model.time > end_time)):
+            pass
+        else:
+            self.radiant_heat()
 
 class HeatCharge(Agent):
     """ An agent with fixed initial wealth."""
@@ -135,7 +169,15 @@ class HeatCharge(Agent):
         return check
 
     def convergence_verocity(self):
-        return self.speed <= 0.01
+        if self.speed <= 0.01:
+            neighbor_spaces = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
+            sum_temp = 0
+            for i in neighbor_spaces:
+                if i.__class__.__name__ == "Space":
+                    sum_temp += i.temp
+                mean_temp = sum_temp/len(neighbor_spaces)
+
+            return abs(mean_temp - self.temp) < 0.1
 
     def convergence_energy(self):
         return abs(self.energy) < 0.0001
@@ -145,28 +187,32 @@ class HeatCharge(Agent):
         return (x >= self.model.space_x_max or x <= self.model.space_x_min) or (y >= self.model.space_y_max or y <= self.model.space_y_min) or (z >= self.model.space_z_max or z <= self.model.space_z_min)
                 
     def convection_heat(self):
-        neighbor_spaces = self.model.grid.get_neighbors(self.pos, int(1 + self.radius), include_center=False)
+        neighbor_spaces = self.model.grid.get_neighbors(self.pos, (self.speed + self.radius), include_center=False)
         for other in neighbor_spaces:
             if self.energy != 0:
                 if other.__class__.__name__ == "Space":
-                    sum_heat = BETA * abs(self.temp - other.temp) / ((4/3 * math.pi * self.radius**3) * self.model.grid.get_distance(self.pos, other.pos) ** 2)
+                    sum_heat = BETA * (abs(self.temp - other.temp) / self.model.grid.get_distance(self.pos, other.pos) ** 2) / (4/3 * math.pi * self.radius**3)
                     # print("渡すエネルギー：{}".format(sum_heat))
                     # print("熱荷温度：{}".format(self.temp))
                     # print("空間温度：{}".format(other.temp))
                     if sum_heat > abs(self.energy):
                         sum_heat = abs(self.energy)
+                    # 冷房のとき
                     if self.energy < 0:
                         if self.temp < other.temp:
-                            other.energy -= sum_heat
-                            other.temp -= sum_heat / SPACE_HEAT_CAPACITY
-                            self.energy += sum_heat
-                            self.temp  += sum_heat / SPACE_HEAT_CAPACITY
+                            if sum_heat > abs(self.energy):
+                                other.energy -= sum_heat
+                                other.temp -= sum_heat / SPACE_HEAT_CAPACITY
+                                self.energy += sum_heat
+                                self.temp  += sum_heat / SPACE_HEAT_CAPACITY
+                    # 暖房のとき
                     else:
                         if self.temp > other.temp:
-                            other.energy += sum_heat
-                            other.temp   += sum_heat / SPACE_HEAT_CAPACITY
-                            self.energy  -= sum_heat
-                            self.temp    -= sum_heat / SPACE_HEAT_CAPACITY
+                            if sum_heat > self.energy:
+                                other.energy += sum_heat
+                                other.temp   += sum_heat / SPACE_HEAT_CAPACITY
+                                self.energy  -= sum_heat
+                                self.temp    -= sum_heat / SPACE_HEAT_CAPACITY
 
     def collision_barrier(self):
         neighbor_barriers = self.model.grid.get_neighbors(self.pos, int(self.radius - 1), include_center=False)
@@ -199,7 +245,8 @@ class HeatCharge(Agent):
             if other.__class__.__name__ == "HeatCharge":
                 d = self.model.grid.get_distance(other.pos, self.pos)
                 # 衝突条件を満たすとき
-                if d < (other.radius + self.radius):
+                if d < (other.radius + self.radius) and (other.angle != self.angle) and (other.direction != self.direction):
+                    # print(other.angle,self.angle,other.direction,self.direction)
                     # print(self.temp,other.temp)
                     angle,speed = _decision_angle(self,other)
                     if self.radius > other.radius:
@@ -207,7 +254,8 @@ class HeatCharge(Agent):
                         self.speed = speed
                         self.energy = (other.energy + self.energy) / 2
                         # self.temp += other.energy / SPACE_HEAT_CAPACITY
-                        self.temp = (self.temp + other.temp) / 2
+                        # self.temp = (self.temp + other.temp) / 2
+                        self.temp = self.temp + other.temp / SPACE_HEAT_CAPACITY
                         # self.model.remove_agents_list.append(other)
                         self.model.remove_agents_set.add(other.unique_id)
                         # print(self.temp)
@@ -400,14 +448,14 @@ class HeatModel(Model):
 
     def _set_ac_agent(self):
         for one in self.ac_position:
-            pos = (float(one["x"]),float(one["y"]),float(one["z"]))
+            pos = (float(one["x"])+self.space_x_min,float(one["y"])+self.space_y_min,float(one["z"])+self.space_z_min)
             agent = AirConditioner(self.next_id(),self,pos,one["id"],self.init_bems_data["{}吸込温度".format(one["id"])])
             self.schedule.add(agent)
             self.grid.place_agent(agent, pos)
 
-    def _general_set_agent_roop(self,pos,x_i,y_i,z_i,base_temp):
+    def _general_set_agent_roop(self,pos,x_i,y_i,z_i,base_temp,base_ac_id):
         if (z_i == self.space_z_min) or (z_i == self.space_z_max) or (x_i == self.space_x_min) or (x_i == self.space_x_max) or (y_i == self.space_y_min) or (y_i == self.space_y_max):
-            agent = HeatSource(self.next_id(),self,pos,base_temp,1)
+            agent = HeatSource(self.next_id(),self,pos,base_temp,1,base_ac_id)
         else:
             agent = Space(self.next_id(),self,pos,base_temp)
         self.schedule.add(agent)
@@ -442,69 +490,70 @@ class HeatModel(Model):
                     for i in self.ac_agents_list:
                         distance_arr.append(self.grid.get_distance(i.pos,pos_format))
                     base_temp = self.ac_agents_list[distance_arr.index(min(distance_arr))].observe_temp
+                    base_ac_id = self.ac_agents_list[distance_arr.index(min(distance_arr))].ac_id
                     source_temp = -1
                     for i in range(len(self.source_data)):
                         if (self.source_data[i]["x"] + self.space_x_min == x_i) and (self.source_data[i]["y"] + self.space_y_min == y_i) and (self.source_data[i]["z"] == z_i):
                             source_temp = self.source_data[i]["temp"]
                     if x_condition == "big" and y_condition == "big":
                         if source_temp > 0:
-                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5)
+                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5,base_ac_id)
                             self.schedule.add(agent)
                             self.grid.place_agent(agent, pos)                            
                         elif (x_i > base_point["x"] and y_i > base_point["y"]):
                             if (x_i == base_point["x"] + 1) or (y_i == base_point["y"] + 1):
                                 if  z_i > 0 and z_i < 4:
-                                    agent = HeatSource(self.next_id(),self,pos,base_temp,1)
+                                    agent = HeatSource(self.next_id(),self,pos,base_temp,1,base_ac_id)
                                     self.schedule.add(agent)
                                     self.grid.place_agent(agent, pos)
                         else:
-                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp)
+                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp,base_ac_id)
                     elif x_condition == "big" and y_condition == "small":
                         if source_temp > 0:         
-                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5)
+                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5,base_ac_id)
                             self.schedule.add(agent)
                             self.grid.place_agent(agent, pos)                                        
                         elif (x_i > base_point["x"] and y_i < base_point["y"]):
                             if (x_i == base_point["x"] + 1) or (y_i == base_point["y"] - 1):
                                 if  z_i > 0 and z_i < 4:
-                                    agent = HeatSource(self.next_id(),self,pos,base_temp,1)
+                                    agent = HeatSource(self.next_id(),self,pos,base_temp,1,base_ac_id)
                                     self.schedule.add(agent)
                                     self.grid.place_agent(agent, pos)
                         else:
-                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp)
+                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp,base_ac_id)
                     elif x_condition == "small" and y_condition == "big":
                         if source_temp > 0:
-                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5)
+                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5, base_ac_id)
                             self.schedule.add(agent)
                             self.grid.place_agent(agent, pos)                                         
                         elif (x_i < base_point["x"] and y_i > base_point["y"]):
                             if (x_i == base_point["x"] - 1) or (y_i == base_point["y"] + 1):
                                 if  z_i > 0 and z_i < 4:
-                                    agent = HeatSource(self.next_id(),self,pos,base_temp,1)
+                                    agent = HeatSource(self.next_id(),self,pos,base_temp,1,base_ac_id)
                                     self.schedule.add(agent)
                                     self.grid.place_agent(agent, pos)
                         else:
-                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp)
+                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp,base_ac_id)
                     elif x_condition == "small" and y_condition == "small":
                         if source_temp > 0:          
-                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5)
+                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5,base_ac_id)
                             self.schedule.add(agent)
                             self.grid.place_agent(agent, pos)                                         
                         elif (x_i < base_point["x"] and y_i < base_point["y"]):
                             if (x_i == base_point["x"] - 1) or (y_i == base_point["y"] - 1):
                                 if  z_i > 0 and z_i < 4:
-                                    agent = HeatSource(self.next_id(),self,pos,base_temp,1)
+                                    agent = HeatSource(self.next_id(),self,pos,base_temp,1,base_ac_id)
                                     self.schedule.add(agent)
                                     self.grid.place_agent(agent, pos)
                         else:
-                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp)
+                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp,base_ac_id)
                     else:
                         if source_temp > 0:
-                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5)
+                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5,base_ac_id)
                             self.schedule.add(agent)
                             self.grid.place_agent(agent, pos)                                
                         else:                          
-                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp)
+                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp,base_ac_id)
 
     def _set_space_param(self):
         grid_points = self.layout_data
@@ -588,3 +637,5 @@ class HeatModel(Model):
             self.remove_agents()
             self.time += timedelta(seconds=1)
             self.per_time_dic = {}
+
+
