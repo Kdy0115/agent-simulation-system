@@ -5,7 +5,7 @@ from datetime import datetime as dt
 import os
 import matplotlib.pyplot as plt
 
-out_file_path = 'out/result_2021_07_2_fix/cmp/result5.csv'
+out_file_path = 'out/result_2021_07_2_out_2/cmp/result5.csv'
 
 def rename_columns(df):
     df_new_columns = ["時間"]

@@ -5,7 +5,8 @@ ALPHA = 0.049
 BETA = 0.061
 # BETA = 0.61
 # Radiation heat model[γ] （輻射熱モデル）
-GAMMA = 0.036
+# GAMMA = 0.036
+GAMMA = 0.072
 # GAMMA = 0.36
 # Heat charge init radius （熱荷の初期半径）
 INIT_HEAT_CHARGE_RADIUS = 0.45

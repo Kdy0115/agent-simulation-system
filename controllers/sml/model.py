@@ -65,18 +65,27 @@ class HeatSource(Agent):
         self.energy = self.temp * self.capacity
         self.neighbors_list = []
 
+    def server_room_barrier_setting(self):
+        # サーバー側の壁のとき
+        if self.model.space_y_max == self.pos[1]:
+            self.temp = 25
+            self.energy = self.temp * self.capacity
+
     def radiant_heat(self):
         if len(self.neighbors_list) < 1:
-            self.neighbors_list = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
-        # 人間のとき            
+            self.neighbors_list = self.model.grid.get_neighbors(self.pos, 1, include_center=False)            
         for other in self.neighbors_list:
             if other.__class__.__name__ == "Space":
-                # 室内の熱源のとき
+                # if ((self.model.time.second == 0)) and ((self.model.time.minute == 0) or (self.model.time.minute == 30)):
+                #     print("障害物が渡すエージェントの数")
+                #     print(self.pos,self.kind,len(self.neighbors_list))
+                # 人の場合
                 if self.kind == 5:
-                    sum_heat = abs(self.temp - other.temp) * HUMAN_HEAT_RATIO
-                    if self.temp > other.temp:
-                        other.energy += sum_heat
-                        other.temp += sum_heat / other.capacity
+                    sum_heat = (abs(self.temp - other.temp) * HUMAN_HEAT_RATIO) / len(self.neighbors_list)
+                    # if self.temp > other.temp:
+                    other.energy += sum_heat
+                    other.temp += sum_heat / other.capacity
+                # 人以外のとき（壁や天井、床など）
                 else:
                     sum_heat = abs(self.temp - other.temp) * GAMMA
                     if self.temp > other.temp:
@@ -89,6 +98,8 @@ class HeatSource(Agent):
                         self.temp  += sum_heat/self.capacity
                         other.energy -= sum_heat
                         other.temp -= sum_heat/other.capacity
+                    # if ((self.model.time.second == 0)) and ((self.model.time.minute == 0) or (self.model.time.minute == 30)):
+                    #     print(other.temp)
 
     def out_barrier_agent(self):
         agent_data = {
@@ -97,7 +108,8 @@ class HeatSource(Agent):
             "x"     : self.pos[0],
             "y"     : self.pos[1],
             "z"     : self.pos[2],
-            "class" : "space"
+            "class" : "barrier",
+            "kind"  : self.kind,
         }
         self.model.per_time_dic["agent_list"].append(agent_data)
 
@@ -106,20 +118,25 @@ class HeatSource(Agent):
         if self.kind != 5:
             self.temp = self.model.init_bems_data["{}吸込温度".format(self.base_ac_id)]
             self.energy = self.temp * self.capacity
-            # print("------------------------------------")
-            # print(self.model.time)
-            # print(self.temp,self.model.init_bems_data["{}吸込温度".format(self.base_ac_id)])
+            # if self.base_ac_id == "5f6" or self.base_ac_id == "5f7" or self.base_ac_id == "5f8":
+            #     print("------------------------------------")
+            #     print(self.model.time)
+            #     print(self.base_ac_id)
+            #     print(self.temp,self.model.init_bems_data["{}吸込温度".format(self.base_ac_id)])
 
     def step(self):
         if ((self.model.time.second == 0)) and ((self.model.time.minute == 0) or (self.model.time.minute == 30)):
+            # print(self.model.time)
             self.update_temp()
-
+        self.server_room_barrier_setting()
         start_time = datetime(self.model.time.year,self.model.time.month,self.model.time.day,8,0,0)
         end_time   = datetime(self.model.time.year,self.model.time.month,self.model.time.day,17,0,0)
         if ((self.kind == 5) and (self.model.time < start_time or self.model.time > end_time)):
             pass
         else:
             self.radiant_heat()
+
+        
 
 class HeatCharge(Agent):
     """ An agent with fixed initial wealth."""
@@ -135,10 +152,13 @@ class HeatCharge(Agent):
         self.radius = INIT_HEAT_CHARGE_RADIUS
         self.change_rate = RATE_OF_CHANGE
         self.ac = ac
-        if ac.mode == 1:
-            self.energy = -INIT_AC_ENERGY * ac.release_temp
-        else:
-            self.energy = INIT_AC_ENERGY * ac.release_temp
+        self.energy = INIT_AC_ENERGY * abs(ac.release_temp - ac.set_temp) if ac.mode == 3 else INIT_AC_ENERGY * (ac.release_temp - ac.set_temp)
+        # if ac.mode == 1: # 冷房のとき
+        #     # マイナスのエネルギーを持つ
+        #     self.energy = -INIT_AC_ENERGY * ac.release_temp
+        # elif ac.mode==2: # 暖房のとき
+        #     # プラスのエネルギーを持つ
+        #     self.energy = INIT_AC_ENERGY * ac.release_temp
         self.pre_energy = self.energy
 
     def move(self):
@@ -147,11 +167,13 @@ class HeatCharge(Agent):
             float(self.pos[1]) + self.speed * math.sin(math.radians(self.angle)) * math.cos(math.radians(self.direction)),
             float(self.pos[2]) - self.speed * math.sin(math.radians(self.direction))
         )
-        self.speed  *= self.change_rate
+
+        self.speed  /= math.exp(1/self.change_rate)
         if self.radius >= 5:
             self.radius = 5
         else:
-            self.radius *= (1 + self.change_rate)
+            # self.radius *= (1 + self.change_rate)
+            self.radius *= math.exp(1/self.change_rate)
         
         if not self.out_of_spaces(new_pos):
             self.model.grid.move_agent(self,new_pos)
@@ -159,72 +181,136 @@ class HeatCharge(Agent):
         #     self.model.remove_agents_list.append(self)
 
     def add_remove_agents(self):
-        if self.out_of_spaces(self.pos) or self.convergence_verocity() or self.convergence_energy() or self.check_change_energy():
-            # self.model.remove_agents_list.append(self)
+        # if self.out_of_spaces(self.pos) or self.convergence_verocity() or self.convergence_energy() or self.check_change_energy():
+        if self.out_of_spaces(self.pos) or self.convergence_verocity() or self.check_change_energy():
             self.model.remove_agents_set.add(self.unique_id)
 
     def check_change_energy(self):
+        """ エネルギーの変化の正負が入れ替わる時はゼロになったとみなし削除する
+
+        Returns:
+            check [Boolean]: エネルギーの正負が入れ替わったらTrueを返す
+        """        
         check = self.energy*self.pre_energy <= 0
         self.pre_energy = self.energy
         return check
 
     def convergence_verocity(self):
-        if self.speed <= 0.01:
-            neighbor_spaces = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
-            sum_temp = 0
-            for i in neighbor_spaces:
-                if i.__class__.__name__ == "Space":
-                    sum_temp += i.temp
-                mean_temp = sum_temp/len(neighbor_spaces)
+        """ 速度が一定以下になると周囲の空間に残っているエネルギーを渡して消える挙動を行う関数
 
-            return abs(mean_temp - self.temp) < 0.1
+        Returns:
+            True [Boolean]: 一定以下になるという前提でreturnされるので常に真
+        """        
+        if self.speed <= 0.01:
+            neighbor_spaces = self.model.grid.get_neighbors(self.pos, self.radius, include_center=False)
+            sum_temp = 0
+            space_agent_list = []
+
+            # 空間エージェントだけ取り出す
+            for agent in neighbor_spaces:
+                if agent.__class__.__name__ == "Space":
+                    space_agent_list.append(agent)
+
+            # 単位空間に与えるエネルギーを個数で割る
+            unit_give_energy = self.energy / len(space_agent_list)
+            for agent in space_agent_list:
+                agent.energy += unit_give_energy
+                agent.temp   += unit_give_energy / agent.capacity
+
+            return True
 
     def convergence_energy(self):
+        """ エネルギーの閾値を下回ったら削除する関数
+
+        Returns:
+            [Boolean]: 閾値を下回ったらTrue
+        """        
+        # エネルギーの閾値を下回ると削除
         return abs(self.energy) < 0.0001
             
     def out_of_spaces(self,pos):
+        """定義空間外に行くと削除する関数
+
+        Args:
+            pos ([tupple]): エージェントの座標
+
+        Returns:
+            [Boolean]: x,y,zのいずれかの値が範囲外の時にTrue
+        """        
         x,y,z = pos
         return (x >= self.model.space_x_max or x <= self.model.space_x_min) or (y >= self.model.space_y_max or y <= self.model.space_y_min) or (z >= self.model.space_z_max or z <= self.model.space_z_min)
                 
     def convection_heat(self):
+        """ 熱荷が周囲の空間にエネルギーを渡す関数
+        """        
+
+        # 次に動かまでの間のすべての空間エージェントを取得
         neighbor_spaces = self.model.grid.get_neighbors(self.pos, (self.speed + self.radius), include_center=False)
+        # for文で続けてエネルギーを渡すかを判別するフラグ
+        remove_condition = False
+
         for other in neighbor_spaces:
+            # エネルギーを保有している場合
             if self.energy != 0:
+                # 空間エージェントのみ
                 if other.__class__.__name__ == "Space":
+                    # 渡すエネルギー量の決定（絶対値）
                     sum_heat = BETA * (abs(self.temp - other.temp) / self.model.grid.get_distance(self.pos, other.pos) ** 2) / (4/3 * math.pi * self.radius**3)
-                    # print("渡すエネルギー：{}".format(sum_heat))
-                    # print("熱荷温度：{}".format(self.temp))
-                    # print("空間温度：{}".format(other.temp))
+                    # 受け渡すエネルギーが保有エネルギー上回っていれば保有エネルギーに設定
                     if sum_heat > abs(self.energy):
                         sum_heat = abs(self.energy)
+                        remove_condition = True
                     # 冷房のとき
                     if self.energy < 0:
+                        # 空間エネルギーのほうが温度が高いとき
                         if self.temp < other.temp:
-                            if sum_heat > abs(self.energy):
-                                other.energy -= sum_heat
-                                other.temp -= sum_heat / SPACE_HEAT_CAPACITY
-                                self.energy += sum_heat
-                                self.temp  += sum_heat / SPACE_HEAT_CAPACITY
+                            # if sum_heat > abs(self.energy):
+                            other.energy -= sum_heat
+                            other.temp -= sum_heat / SPACE_HEAT_CAPACITY
+                            self.energy += sum_heat
+                            self.temp  += sum_heat / SPACE_HEAT_CAPACITY
                     # 暖房のとき
                     else:
+                        # 空間エネルギーの方が温度が大きいとき
                         if self.temp > other.temp:
-                            if sum_heat > self.energy:
-                                other.energy += sum_heat
-                                other.temp   += sum_heat / SPACE_HEAT_CAPACITY
-                                self.energy  -= sum_heat
-                                self.temp    -= sum_heat / SPACE_HEAT_CAPACITY
+                            # if sum_heat > self.energy:
+                            other.energy += sum_heat
+                            other.temp   += sum_heat / SPACE_HEAT_CAPACITY
+                            self.energy  -= sum_heat
+                            self.temp    -= sum_heat / SPACE_HEAT_CAPACITY
+                    # すべてのエネルギーを渡した場合for文を抜ける
+                    if remove_condition:
+                        break
 
     def collision_barrier(self):
+        """ 障害物（熱源エージェント）と衝突する時の挙動を表す関数
+        """        
+
+        # 半径-1内のエージェントを調べる
         neighbor_barriers = self.model.grid.get_neighbors(self.pos, int(self.radius - 1), include_center=False)
+        # 対象エージェントリスト
+        target_agents_list = []
+        # 削除フラグ
+        remove_agent = False
+
         for barrier in neighbor_barriers:
-            if barrier.__class__.__name__ == "HeatSource":
-                if (self.energy < 0 and self.temp < barrier.temp) or (self.energy > 0 and self.temp > barrier.temp):
-                    energy = self.energy * GAMMA
+            # 熱源エージェントのときでかつ人やPCなどの熱源以外の障害物に対して
+            if barrier.__class__.__name__ == "HeatSource" and barrier.kind != 5:
+                target_agents_list.append(barrier)
+
+        for agent in target_agents_list:
+                if (self.energy < 0 and self.temp < agent.temp) or (self.energy > 0 and self.temp > agent.temp):
+                    # energy = self.energy * GAMMA
+                    energy = self.energy / len(target_agents_list)
                     barrier.energy += energy
-                    barrier.temp += energy / barrier.capacity
+                    barrier.temp += energy / agent.capacity
+                    self.energy -= energy
+                    remove_agent = True
                     # self.model.remove_agents_list.append(self)
-                    self.model.remove_agents_set.add(self.unique_id)
-                    break
+
+        if remove_agent:
+            # エネルギー交換が終わったら削除エージェントへ追加
+            self.model.remove_agents_set.add(self.unique_id)
 
     def heat_collision(self):
         def _decision_angle(agt1,agt2):
@@ -282,12 +368,12 @@ class HeatCharge(Agent):
         self.model.per_time_dic["agent_list"].append(agent_data)
 
     def step(self):
-        self.move()
         self.heat_collision()
         self.collision_barrier()
         self.convection_heat()
         self.add_remove_agents()
         self.output_space_agent()
+        self.move()
 
 class AirConditioner(Agent):
     """ An agent with fixed initial wealth."""
@@ -388,7 +474,8 @@ class AirConditioner(Agent):
         if self.model.schedule.steps%60 == 0:
             self.read_control_data()
             self.switch_mode()
-        # self.see_class()
+            # if self.mode != 0:
+            #     self.see_class()
         self.create_heat()
         self.output_ac_data()
 
@@ -632,7 +719,9 @@ class HeatModel(Model):
             if self.time.second == 0:
                 self.next_control_data()
                 self.spaces_agents_list.append(self.per_time_dic)
+                # print(len(self.per_time_dic))
                 # self.print_state()
+            # print("\n")
             # print(self.schedule.get_agent_count())
             self.remove_agents()
             self.time += timedelta(seconds=1)
