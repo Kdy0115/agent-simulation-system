@@ -3,7 +3,7 @@
 
 """ コーディング規約
 
-1. 関数名は単語をアンダーバー(_)で接続
+1. 関数名は単語をアンダースコア(_)で接続
 2. 冗長性は解消することを心がける
 3. 同じ処理を行う部分や機能を独立させれる部分はモジュール（関数）化を行う
 4. 処理が中心で単一のファイルで完結するのでクラスは用いない
@@ -23,7 +23,8 @@ import os
 import time
 
 # Pythonファイルパス
-pypath = 'out/result_2021_07_2/cmp/result5.csv'
+# pypath = 'out/result_2020_12_18/cmp/result5.csv'
+pypath = 'out/result_2021_07_2_out_2/cmp/result5.csv'
 # Artisocファイルパス
 artpath = 'artisoc/07-02/result.xlsx'
 # BEMSデータファイルパス

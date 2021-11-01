@@ -29,20 +29,6 @@ artdf = pd.read_excel(artpath,encoding="shift-jis")
 sourcedf = pd.read_excel(sourcepath,encoding="shift-jis")
 
 
-def uniform_time(df_py, df_art, df_bems):
-    """ 各データの時間をpythonデータに合わせる関数
-
-    Args:
-        df_py ([DataFrame]): pythonの結果データを読み込んだDataFrame
-        df_art ([DataFrame]): Artisocの結果データを読み込んだDataFrame
-        df_bems ([DataFrame]): BEMSのデータを読み込んだDataFrame
-
-    Returns:
-        [DataFrame]: 全てのデータを統合して時間を統一したプログラム        
-    """    
-    
-
-
 
 startday = 2
 starthour = 8
