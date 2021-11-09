@@ -1,5 +1,5 @@
 # Change heat model[α] （熱交換モデル）
-ALPHA = 0.049
+ALPHA = 0.10
 # ALPHA = 0.49
 # Convection heat model[β] （強制対流モデル）
 BETA = 0.061

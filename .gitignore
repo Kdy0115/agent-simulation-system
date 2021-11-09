@@ -35,3 +35,6 @@ bems/
 
 # db file
 db/
+
+# evaluation file
+eval/
