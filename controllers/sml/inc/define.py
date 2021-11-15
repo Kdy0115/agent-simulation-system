@@ -26,4 +26,5 @@ WINDOW_HEAT_CAPACITY = 2100
 # Heat capacity of heat source(wall, floor, ceil)（熱源の比熱：壁、床、天井）
 OTHER_SOURCE_HEAT_CAPACITY = 3000
 # Human heat ratio（人間の放熱割合）
-HUMAN_HEAT_RATIO = 0.12
+# HUMAN_HEAT_RATIO = 0.12
+HUMAN_HEAT_RATIO = 100

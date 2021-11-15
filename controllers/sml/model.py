@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+
+""" シミュレーションモデルの定義モジュール
+"""
+
+
+
 from controllers.sml.extension.spaces.space_extension import ContinuousSpace3d
 from mesa.time import SimultaneousActivation
 from mesa import Agent, Model
@@ -7,6 +14,8 @@ import random
 import math
 import copy
 from datetime import datetime, timedelta
+
+
 
 class Space(Agent):
     capacity = SPACE_HEAT_CAPACITY

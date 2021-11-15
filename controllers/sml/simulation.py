@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+
+""" シミュレーション制御モジュール
+"""
+
+
+
 # ライブラリ
 import datetime
 import numpy as np
