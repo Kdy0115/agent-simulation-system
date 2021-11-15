@@ -4,8 +4,8 @@ controllers/sml/inc/__pycache__/
 
 # Data files
 # bems/
-# db/
- .ipynb_checkpoints/
+artisoc/
+.ipynb_checkpoints/
 out/
 data/
 # *.json
@@ -35,3 +35,6 @@ bems/
 
 # db file
 db/
+
+# evaluation file
+eval/
