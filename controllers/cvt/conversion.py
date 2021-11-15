@@ -23,8 +23,11 @@ class DataSet():
         bems_file_path           [str]  : 設定ファイルから読み込んだBems初期データのファイルパス
         control_data_folder_path [str]  : 設定ファイルから読み込んだ空調制御データのフォルダパス（フロア分読み込まれる）
         simulation_step          [int]  : 設定ファイルから読み込んだシミュレーション回数
+        simulation_start_time    [date] : 設定ファイルから読み込んだシミュレーション開始時間
+        simulation_end_time      [date] : 設定ファイルから読み込んだシミュレーション終了時間
         layout_file_path         [str]  : 設定ファイルから読み込んだ室内レイアウト情報を記載したファイルパス
         heat_source_file_path    [str]  : 設定ファイルから読み込んだ室内の熱源情報を記載したファイルパス
+        skeleton_file_path       [str]  : 設定ファイルから読み込んだスケルトンファイルパス
         output_folder            [str]  : 設定ファイルから読み込んだ実行結果を格納する格納先フォルダパス
         mp_flag                  [bool] : 設定ファイルから読み込んだマルチプロセス計算を行うかのフラグ
         floors                   [array]: シミュレーションを行うフロア階数を配列形式で格納したリスト
@@ -38,25 +41,33 @@ class DataSet():
     def __init__(self, config_bems: str, config_control: str, config_layout: str, config_simulation: str, mp: str, encoding: str) -> None:
 
         # 設定ファイルの内容を読み込む
-        self.bems_file_path = config_bems["BEMS_file_path"]
+        self.bems_file_path           = config_bems["BEMS_file_path"]
+        
         self.control_data_folder_path = config_control["Control_file_path"]
-        self.simulation_step = config_simulation["Simulation_time"]
-        self.laytout_file_path = config_layout["Lyaout_floor_file_path"]
-        self.heat_source_file_path = config_layout["Heat_source_file_path"]
-        self.output_folder = config_simulation["Output_folder_path"]
-        self.mp_flag = True if mp["multiprocess"] == "True" else False
+        
+        self.simulation_step          = config_simulation["Simulation_time"]
+        self.simulation_start_time    = config_simulation["start_time"]
+        self.simulation_end_time      = config_simulation["end_time"]
+        self.output_folder            = config_simulation["Output_folder_path"]
+        
+        self.laytout_file_path        = config_layout["Lyaout_floor_file_path"]
+        self.heat_source_file_path    = config_layout["Heat_source_file_path"]
+        self.skeleton_file_path       = config_layout["skeleton_file_path"]
+        
+        self.mp_flag                  = True if mp["multiprocess"] == "True" else False
+        
         # 文字コードの設定
-        self.encoding = encoding
+        self.encoding                 = encoding
         
         # シミュレーションを行うフロアの選択
         # self.floors = [3,4,5]
         # self.floors = [3,4]
-        self.floors = [5]
+        self.floors                   = [5]
         
         # 整形データを格納する変数
-        self.init_bems_data = []
-        self.control_data = []
-        self.layout_data = []
+        self.init_bems_data           = []
+        self.control_data             = []
+        self.layout_data              = []
 
         # 出力先フォルダの作成
         functions.create_dir(self.output_folder + "cmp/")
@@ -66,7 +77,7 @@ class DataSet():
     def import_all_control_data(self):
         """ 空調制御計画データを読み込む
         """       
-        
+
         # 制御計画データの読み込み
         files = glob.glob("{}*.csv".format(self.control_data_folder_path))
         # ファイルと階数で回す
@@ -113,7 +124,7 @@ class DataSet():
 
     def _import_bems_data(self) -> None:
         """ 初期値BEMSデータをインポートしてデータを整形するモジュール
-        """        
+        """
 
         # BEMSのファイルデータをインポート（エンコーディングを指定）
         df = pd.read_csv(self.bems_file_path,encoding=self.encoding)
