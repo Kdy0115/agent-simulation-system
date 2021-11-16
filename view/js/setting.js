@@ -8,9 +8,7 @@ var hot_position_folder_place0 = document.getElementById("hot_position_folder_pl
 
 var input_folder_place = document.getElementById("input_folder_place");
 
-
-
-function save_setting(){
+async function save_setting(){
     //var number_of_times = document.getElementById("number_of_times");
     //document.getElementById("output").innerHTML = number_of_times.value
 
@@ -25,7 +23,7 @@ function save_setting(){
         eval("var hot_position_folder_place" + j + "= document.getElementById('hot_position_folder_place"+j+"');" );
 
     }
-
+    await eel.test_print()();
     var input_folder_place = document.getElementById("input_folder_place");
     setting_check();
 }
