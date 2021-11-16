@@ -3,86 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <title>Thermal Environment Simulator</title>
-
-    <!-- Library import -->
-    <link rel="stylesheet" href="materialize/css/materialize.css">
-    <link rel="stylesheet" href="css/index.css">
-    <link rel="stylesheet" href="css/simulation.css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <script type="text/javascript" src="/eel.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 </head>
-
 <body>
-    <div class="content-all">
-  <!-- ナビゲーションメニュー-->
+    <!-- メニュー -->
     <nav>
-      <div class="nav-wrapper blue-grey darken-4">
-        <a href="index.html" class="brand-logo">Thermal Environment Simulator</a>
-        <ul id="nav-mobile" class="menu-ul right hide-on-med-and-down">
-          <li class="menu-list"><a class='dropdown-trigger' href="#"data-target='dropdown1'>設定</a></li>
-          <li class="menu-list"><a class='dropdown-trigger' href="#"data-target='dropdown2'>シミュレーション</a></li>
-          <li class="menu-list"><a class='dropdown-trigger' href="#"data-target='dropdown3'>分析</a></li>
-        </ul>
-      </div>
-      <ul id='dropdown1' class='dropdown-content'>
-        <li><a class="blue-grey-text darken-4" href="configuration.html">初期設定</a></li>
-        <li><a class="blue-grey-text darken-4" href="configuration.html">レイアウト設定</a></li>
-      </ul>
-      <ul id='dropdown2' class='dropdown-content'>
-        <li><a class="blue-grey-text darken-4" href="simulation.html">実行</a></li>
-        <li><a class="blue-grey-text darken-4" href="confirm.html">結果確認</a></li>
-      </ul>
-      <ul id='dropdown3' class='dropdown-content'>
-        <li><a class="blue-grey-text darken-4" href="analytics.html">評価</a></li>
-        <li><a class="blue-grey-text darken-4" href="analytics.html">チューニング</a></li>
-      </ul>
+        <a href="index.html">環境設定</a>
+        
+        <a href="doing.html">シミュレーション</a>
+        
+        <a href="evaluation.html">評価</a>
     </nav>
 
-    <div class="message-start">シミュレーションを開始します</div>
-    <div class="message-stop">シミュレーションを終了します</div>
-  <!-- コンテンツ-->
-  <div id="content" style="padding-top:5%;">
-    <div id="title">
-        <h5 id="title-text" class="left-align">シミュレーション実行</h5>
-    </div>
-    <!-- コンソール画面-->
-    <div id="simulation-console" class="console" style="background-color: black; height: 400px;margin-left: 200px;margin-right: 200px;margin-top: 100px; color: white;">
-    </div>
-    <a id="control-button-start" onclick="start_simulation();" style="font-size:42px;"class="waves-effect waves-light btn-large config-start-button">START</a>
-    <a id="control-button-stop" onclick="stop_simulation();" style="font-size:42px;"class="red lighten-1 waves-effect waves-light btn-large config-stop-button">STOP</a>
-  </div>
+    <!-- 中身-->
+    <div id="content">
+        <h1>評価</h1>
+        <label>BEMSファイル（評価用データ）のパスを入力</label><br>
+        <input type="text" id="bems_folder_place" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
+        <label>シミュレーション結果ファイルのパスを入力</label><br>
+        <input type="text" id="result_of_simulation_file" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
 
-  <!-- フッター-->
-  <div class="footer">
-    <footer class="page-footer blue-grey darken-4">
-          <div class="container">
-            <div class="row">
-              <div class="col l6 s12">
-                <h5 class="white-text">Footer Content</h5>
-                <p class="grey-text text-lighten-4">You can use rows and columns here to organize your footer content.</p>
-              </div>
-              <div class="col l4 offset-l2 s12">
-                <h5 class="white-text">Links</h5>
-                <ul>
-                  <li><a class="grey-text text-lighten-3" href="#!">Link 1</a></li>
-                  <li><a class="grey-text text-lighten-3" href="#!">Link 2</a></li>
-                  <li><a class="grey-text text-lighten-3" href="#!">Link 3</a></li>
-                  <li><a class="grey-text text-lighten-3" href="#!">Link 4</a></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          <div class="footer-copyright">
-            <div class="container">
-            © 2014 Copyright Text
-            <a class="grey-text text-lighten-4 right" href="#!">More Links</a>
-            </div>
-          </div>
-        </footer>
-  </div>
-</div>
-<script type="text/javascript" src="js/simulation.js"></script>
-<script src="materialize/js/materialize.js"></script>
+        <button type='button' id="evaluation_button" onclick="evaluation();">評価を見る</button>
+
+        <div id="result">
+            <h2>差分グラフ</h2>
+            <div id="difference_graph"></div>
+
+            <h3>MAE、最大絶対誤差、分散を確認したい時間範囲を入力</h3>
+            <h3>範囲の初めの時間</h3>
+            <input type="datetime-local" id="strat_time"><br>
+            <h3>範囲の終わりの時間</h3>
+            <input type="datetime-local" id="end_time"><br>
+
+            <button type='button' id="mae_check_button" onclick="mae_check();">評価を見る</button>
+
+            <h2>表</h2>
+            <div id="table"></div>
+        </div>
+    </div>
 </body>
 </html>
