@@ -7,13 +7,10 @@
     <!-- Library import -->
     <link rel="stylesheet" href="materialize/css/materialize.css">
     <link rel="stylesheet" href="css/index.css">
-    <link rel="stylesheet" href="css/confirm.css">
+    <link rel="stylesheet" href="css/simulation.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css'>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
     <script type="text/javascript" src="/eel.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 </head>
 
 <body>
@@ -42,71 +39,18 @@
       </ul>
     </nav>
 
-  <div class="all-loading-screen">
-    <div class="sk-screen">
-      <div class="sk-circle">
-        <div class="sk-circle1 sk-child"></div>
-        <div class="sk-circle2 sk-child"></div>
-        <div class="sk-circle3 sk-child"></div>
-        <div class="sk-circle4 sk-child"></div>
-        <div class="sk-circle5 sk-child"></div>
-        <div class="sk-circle6 sk-child"></div>
-        <div class="sk-circle7 sk-child"></div>
-        <div class="sk-circle8 sk-child"></div>
-        <div class="sk-circle9 sk-child"></div>
-        <div class="sk-circle10 sk-child"></div>
-        <div class="sk-circle11 sk-child"></div>
-        <div class="sk-circle12 sk-child"></div>
-      </div>
-    </div>
-    <div class="loading-text">Loading</div>
-  </div>
-        
     <div class="message-start">シミュレーションを開始します</div>
     <div class="message-stop">シミュレーションを終了します</div>
   <!-- コンテンツ-->
   <div id="content" style="padding-top:5%;">
     <div id="title">
-        <h5 id="title-text" class="left-align">結果確認</h5>
+        <h5 id="title-text" class="left-align">シミュレーション実行</h5>
     </div>
-    <!-- 結果読みこみファイル選択フォーム-->
-    <div id="result-form" class="console" style="background-color: white; height: 400px;margin-left: 100px;margin-right: 100px;margin-top: 100px;">
-      <div class="row">
-        <div class="input-field col s12">
-          <h6>結果フォルダの選択</h6>
-          <select id="input-select" style="display:block;">
-            <option value="nothing">選択してください</option>
-          </select>
-        </div>
-      </div>
-      <div class="row">
-        <div class="input-field col s12">
-          <h6>フロアの選択</h6>
-          <select id="floor-select" style="display:block;" disabled>
-            <option value="nothing">結果フォルダを選択してください</option>
-          </select>
-        </div>
-      </div>
-      <a id="control-button-start" onclick="post_result();" class="waves-effect waves-light btn-large">送信</a>
+    <!-- コンソール画面-->
+    <div id="simulation-console" class="console" style="background-color: black; height: 400px;margin-left: 200px;margin-right: 200px;margin-top: 100px; color: white;">
     </div>
-    <div id="title">
-      <h6 id="title-text" class="left-align">ヒートマップ</h6>
-    </div>
-    <div class="row">
-      <div id="heatmap" class="col s6 heatmap-box">
-        <canvas id="heatMap" class="heatmap-canvas"></canvas>
-      </div>
-      <div id="heatmap-graphes" class="col s6 heatmap-graphes">
-      </div>
-    </div>
-    <div id="title">
-      <h6 id="title-text" class="left-align">結果グラフ</h6>
-    </div>
-    <div class="row">
-      <div id="all-graphes" class="col s6 result-graphes">
-        <canvas id="my-graph" width="800" height="450"></canvas>
-      </div>
-    </div>
+    <a id="control-button-start" onclick="start_simulation();" style="font-size:42px;"class="waves-effect waves-light btn-large config-start-button">START</a>
+    <a id="control-button-stop" onclick="stop_simulation();" style="font-size:42px;"class="red lighten-1 waves-effect waves-light btn-large config-stop-button">STOP</a>
   </div>
 
   <!-- フッター-->
@@ -138,7 +82,7 @@
         </footer>
   </div>
 </div>
-<script type="text/javascript" src="js/confirm.js"></script>
+<script type="text/javascript" src="js/simulation.js"></script>
 <script src="materialize/js/materialize.js"></script>
 </body>
 </html>
