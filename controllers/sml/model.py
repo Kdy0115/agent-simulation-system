@@ -536,7 +536,8 @@ class HeatModel(Model):
         self.ac_agents_list = []
         self.per_time_dic = {}
 
-        self.time = datetime.strptime(self.init_bems_data["時間"].replace("/","-"), '%Y-%m-%d %H:%M:%S')
+        # self.time = datetime.strptime(self.init_bems_data["時間"].replace("/","-"), '%Y-%m-%d %H:%M:%S')
+        self.time = self.init_bems_data["時間"]
 
         self.source_data_info = -1
 
@@ -697,7 +698,8 @@ class HeatModel(Model):
 
     def check_next_bems_data(self):
         if len(self.all_bems_data) > self.bems_data_num:
-            cmp_time = datetime.strptime(self.all_bems_data[self.bems_data_num]["時間"].replace("/","-"), '%Y-%m-%d %H:%M:%S')
+            # cmp_time = datetime.strptime(self.all_bems_data[self.bems_data_num]["時間"].replace("/","-"), '%Y-%m-%d %H:%M:%S')
+            cmp_time = self.all_bems_data[self.bems_data_num]["時間"]
             if self.time == cmp_time:
                 self.init_bems_data = self.all_bems_data[self.bems_data_num]
                 self._reset_heat_source_temp()

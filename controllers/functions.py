@@ -6,6 +6,8 @@
 """
 
 # ライブラリ
+from datetime import date
+import datetime
 import os
 
 def create_dir(path: str) -> None:
@@ -17,21 +19,55 @@ def create_dir(path: str) -> None:
     if not os.path.exists(path):
         os.makedirs(path)
         print("Create {} directory".format(path))
+    
         
         
         
+def str_to_datetime(tstr: str) -> date:
+    """ 文字列を日時の型に変換する
+
+    Args:
+        tstr [str]: 文字列型の時間
+
+    Returns:
+        date: 時間型に変換した時間
+    """    
+    return datetime.datetime.strptime(tstr, '%Y-%m-%d %H:%M:%S')
+
+
+def to_standard_format(tstr: str) -> str:
+    """ 時間文字列を標準型に変換するモジュール
+
+    Args:
+        tstr [str]: 変換前の時間文字列
+
+    Returns:
+        format_time [str]: 変換された時間文字列
+    """    
+    if not "-" in tstr:
+        if len(tstr) < 19:
+            split_time_date = tstr.split(" ")
+            split_date = split_time_date[0].split("/")
+            split_time = split_time_date[1].split(":")
+            year, month, day = int(split_date[0]), int(split_date[1]), int(split_date[2])
+            hour, minute = int(split_time[0]), int(split_time[1])
+            format_time = str(datetime.datetime(year,month,day,hour,minute,0))
+            
+            return format_time
+            
+
+
 def format_time(str_time: str) -> str:
     """ 渡された時間文字列をYYYY/MM/DD hh:mm:00に変換する関数
 
-    Args:
-        str_time [str]: 文字列型の時間　想定フォーマットはYYYY/MM/DD hh:mm:00
-        引数の名前 (:obj:`引数の型`, optional): 引数の説明.
+    Args: 
+        str_time [str]: 文字列型の時間
 
-        Returns:
-        戻り値の型: 戻り値の説明 (例 : True なら成功, False なら失敗.)
+    Returns:
+        YYYY/MM/DD hh:mm:00 [str]: 変換した文字列
 
     """   
-            
+        
     # shift-jisではないフォーマットのとき
     if len(str_time) == 19:
         # shift-jis形式の文字列に変換
