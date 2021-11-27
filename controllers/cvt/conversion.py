@@ -260,6 +260,13 @@ class DataSet():
         return post_data
 
     def per_output_data(self,key: int,data: dict, simulation_step:int) -> None:
+        """ 非バッチ処理（1分単位）際にデータを逐次出力するためのモジュール
+
+        Args:
+            key [int]            : フロア識別用のキー値（階数が入る）
+            data [dict]          : 出力するシミュレーション実行結果データ
+            simulation_step [int]: 初回実行を識別するためのシミュレーションステップ数
+        """        
         file_path = '{0}/result{1}.json'.format(self.output_folder,key)
         json_data = []
         
@@ -334,8 +341,6 @@ class DataSet():
                     
         # シミュレーションデータのフロアと結果データを渡す
         for result in data:
-            print(result[0])
-            exit()
             _output_json(result[0],result[1])
             _output_complement_data(result[0],result[1])
 

@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 
 # 読み込む結果ファイル
-out_file_path = 'out/result_2021_07_2_out_2/cmp/result5.csv'
+out_file_path = 'out/result_2021_08_22_27_out_test2/cmp/result5.csv'
 
 
 
@@ -66,8 +66,8 @@ def create_graphes(df,columns,feature,floor,setting_columns):
     l_4 = "外気温"
     y4 = df["外気温"].values
     
-    min_temp = 22
-    max_tmep = 35
+    min_temp = 24
+    max_tmep = 28
     
     for i in range(len(columns)):
         l_1 = columns[i]
@@ -120,7 +120,9 @@ base_file_path = base_dir + "all_bems_data{}.csv".format(floor)
 df_base = pd.read_csv(base_file_path,encoding="shift-jis")
 df_result.columns,extract_columns,setting_columns = rename_columns(df_base)
 df_merge = pd.merge(df_base, df_result, on='時間', how="right")
-df_merge["外気温"] = 0 
-# df_base["5気温"].values
+try:
+    df_merge["外気温"] = df_base["5気温"].values
+except ValueError:
+    df_merge["外気温"] = 0
 
 create_graphes(df_merge,extract_columns,features,floor,setting_columns)

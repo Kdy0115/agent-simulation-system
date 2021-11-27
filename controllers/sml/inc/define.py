@@ -28,3 +28,5 @@ OTHER_SOURCE_HEAT_CAPACITY = 3000
 # Human heat ratio（人間の放熱割合）
 HUMAN_HEAT_RATIO = 0.12
 # HUMAN_HEAT_RATIO = 0.36
+
+

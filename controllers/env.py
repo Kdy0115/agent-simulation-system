@@ -1,13 +1,19 @@
-# Encoding for input files.
-# Shift-jis format is recommended.
+""""
+シミュレーションの実行環境を設定するファイル
+※バッチ処理をFalseにしてマルチプロセスは実行できないので注意してください。
+"""
+
+
+# CSV形式などの入力ファイルのフォーマットの設定
+# Shift-jisがフォーマットを推奨されます。
 glbal_set_encoding = "shift-jis"
 
-# Setting of bach process.
-# True : Result files is output after simulation terminates.
-# False: Result files is output for each step of the simulation.
+# バッチ処理の設定
+# True : 出力ファイルはシミュレーション終了後に一括で出力されます。
+# False: 出力ファイルはシミュレーション時間で1分ごとに出力されます。
 bach_process = True
 
-# Setting of multi-process
-# True : Simulation is run in multiple processes.
-# False: Simulation is run in sequential processing.
+# マルチプロセス処理の設定
+# True : シミュレーション実行がマルチプロセスで行われます。
+# False: シミュレーション実行が逐次処理で行われます。
 multiprocess = False
