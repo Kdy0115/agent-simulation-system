@@ -18,12 +18,14 @@ mesaの詳細 https://mesa.readthedocs.io/en/stable/
 from mesa.time import SimultaneousActivation
 from mesa import Agent, Model
 import numpy as np
+import sys
 import math
 from datetime import datetime, timedelta
 
 # utils
 from controllers.sml.extension.spaces.space_extension import ContinuousSpace3d
 from controllers.sml.inc.define import *
+from controllers import error
 
 
 
@@ -209,7 +211,11 @@ class HeatSource(Agent):
         
 
 class HeatCharge(Agent):
-    """ An agent with fixed initial wealth."""
+    """ 熱荷エージェントのモデル
+
+    Attributes:
+        Agent ([type]): [description]
+    """    
     def __init__(self, unique_id, model, pos, ac, angle):
         super().__init__(unique_id, model)
         self.pos = pos
@@ -388,7 +394,6 @@ class HeatCharge(Agent):
                 speed = abs(agt1.speed - agt2.speed)
             
             return angle,speed
-            
 
         neighbor_spaces = self.model.grid.get_neighbors(self.pos, int(self.speed + self.radius), include_center=False)
         for other in neighbor_spaces:
@@ -412,7 +417,6 @@ class HeatCharge(Agent):
                         self.model.remove_agents_set.add(self.unique_id)
                     break
 
-
     def output_space_agent(self):
         agent_data = {
             "id"    : self.unique_id,
@@ -431,6 +435,8 @@ class HeatCharge(Agent):
         self.add_remove_agents()
         self.output_space_agent()
         self.move()
+        
+        
 
 class AirConditioner(Agent):
     """ An agent with fixed initial wealth."""
@@ -445,6 +451,7 @@ class AirConditioner(Agent):
         self.observe_temp = observe_temp
         self.model = model
         model.ac_agents_list.append(self)
+        self.nearest_space = None
 
     def output_ac_data(self):
         agent_data = {
@@ -475,12 +482,24 @@ class AirConditioner(Agent):
         self.release_temp = self.set_temp
 
     def _switch_thermo(self):
-        neighbor_spaces = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
-        space_temp_list = []
-        for space in neighbor_spaces:
-            if space.__class__.__name__ == "Space":
-                space_temp_list.append(space.temp)
-        observe_temp = sum(space_temp_list)/len(space_temp_list)
+        # neighbor_spaces = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
+        # space_temp_list = []
+        # for space in neighbor_spaces:
+        #     if space.__class__.__name__ == "Space":
+        #         space_temp_list.append(space.temp)
+        # observe_temp = sum(space_temp_list)/len(space_temp_list)
+        observe_temp = -100
+        if self.nearest_space is None:
+            neighbor_spaces = self.model.grid.get_neighbors(self.pos, 1, include_center=True)
+            for space in neighbor_spaces:
+                if space.__class__.__name__ == "Space":
+                    if (self.pos[0] == space.pos[0]) and (self.pos[1] == space.pos[1]) and (self.pos[2] == space.pos[2]):
+                        observe_temp = space.temp
+            if observe_temp == -100:
+                sys.exit(error.SPACE_DEFINITION_ERROR)
+        else:
+            observe_temp = self.nearest_space.temp
+            
         if self.mode == 1:
             if observe_temp - self.set_temp > 0.5:
                 self.thermo = False
@@ -515,7 +534,6 @@ class AirConditioner(Agent):
                 self.power += INIT_AC_ENERGY * abs(self.release_temp - self.set_temp)
                 # print("熱荷温度：{0}熱荷エネルギー{1}".format(heat.temp,heat.energy))
 
-
     def see_class(self):
         print("時間：{}".format(self.model.time))
         print("-----------------------------------------------")
@@ -536,6 +554,7 @@ class AirConditioner(Agent):
             #     self.see_class()
         self.create_heat()
         self.output_ac_data()
+
 
 
 class HeatModel(Model):
@@ -583,6 +602,7 @@ class HeatModel(Model):
         self.layout_data = layout_data["layout"]
         self.source_data = source_data["data"]
         self.ac_position = layout_data["ac"]
+        self.init_ac_coordinate_arr = []
 
         self.bems_data_num = 0
         self.all_bems_data = init_bems_data["bems_data"]
@@ -610,15 +630,39 @@ class HeatModel(Model):
 
     def __set_init_ac_agents(self):
         """ 空調エージェントの配置を行うメソッド
+            init_bems_data内のデータを参照して配置
+            空調と同じ場所には空間エージェントも配置
         """        
         for one in self.ac_position:
+            # 空調の配置
             pos = (float(one["x"]),float(one["y"]),float(one["z"]))
             agent = AirConditioner(self.next_id(),self,pos,one["id"],self.init_bems_data["{}吸込温度".format(one["id"])])
             self.schedule.add(agent)
             self.grid.place_agent(agent, pos)
+            # 空調と同じ場所には吸込用の空間を配置
+            agent = Space(self.next_id(),self,pos,self.init_bems_data["{}吸込温度".format(one["id"])])
+            self.schedule.add(agent)
+            self.grid.place_agent(agent, pos)
+            self.init_ac_coordinate_arr.append(pos)
+            
+    def __check_ac_postiion_overwrap(self,pos):
+        """ 空調の位置座標と被っているか確認するメソッド
+            空調初期位置決定用で用いる
+
+        Args:
+            pos [tupple]: 位置座標の値
+
+        Returns:
+            [bool]: True->被っている　False->被っていない
+        """        
+        for ac_pos in self.init_ac_coordinate_arr:
+            if (ac_pos[0] == pos[0]) and (ac_pos[1] == pos[1]) and (ac_pos[2] == ac_pos[2]):
+                return True
+        return False
         
     def __determine_agent_temp_from_ac(self,pos):
         """ 現在の位置から最も近い空調を探索するメソッド
+            各エージェントの初期温度を吸込温度に合わせるために用いる
 
         Args:
             pos [tupple]: 位置座標のタプル
@@ -628,10 +672,11 @@ class HeatModel(Model):
             base_ac_id [int]  : 最も近い空調のID
         """        
         distance_arr = []
-        # 最も近い空調の探索
+        # 各空調からの距離を算出
         for i in self.ac_agents_list:
             distance_arr.append(self.grid.get_distance(i.pos,pos))
                 
+        # 距離が最小になる空調の温度とIDを取得
         base_temp = self.ac_agents_list[distance_arr.index(min(distance_arr))].observe_temp
         base_ac_id = self.ac_agents_list[distance_arr.index(min(distance_arr))].ac_id
         
@@ -653,7 +698,7 @@ class HeatModel(Model):
         # 空間エージェント以外の場合
         elif kind == HEAT_SOURCE_KIND_WINDOW or kind == HEAT_SOURCE_KIND_BARRIER or kind == HEAT_SOURCE_KIND_FLOOR or kind == HEAT_SOURCE_KIND_CEILING:
             agent = HeatSource(self.next_id(),self,pos,temp,kind,ac_id)
-            
+        # 配置可能エージェントの場合空間内に設定
         if agent != -1:
             self.schedule.add(agent)
             self.grid.place_agent(agent, pos)
@@ -689,11 +734,13 @@ class HeatModel(Model):
                     temp, near_ac_id = self.__determine_agent_temp_from_ac(pos)
                     # 熱源があるかを調べる
                     heat_source_exist, heat_source_id = self.__check_heat_source_agent_exist(pos)
+                    if self.__check_ac_postiion_overwrap(pos):
+                        pass
                     # 熱源の場合は熱源の配置
-                    if heat_source_exist and heat_source_id != -1:
+                    elif heat_source_exist and heat_source_id != -1:
                         heat_source = self.source_data[heat_source_id]
                         self.__set_init_agent_place(self,HEAT_SOURCE_KIND_OTHERS,pos,heat_source["temp"])
-                    # それ以外の場合はレイアウトに合わせてエージェントの配置
+                    # それ以外の場合はレイアウト情報に合わせてエージェントの配置
                     else:
                         agent_kind = self.layout_data[z][y][x]
                         self.__set_init_agent_place(agent_kind,pos,temp,near_ac_id)
@@ -721,23 +768,28 @@ class HeatModel(Model):
                 ex) (0,0,0)は床側の左下の位置を表す。
         """
         
+        # 最小値はデフォルトで0
         self.space_x_min = 0
         self.space_y_min = 0
         self.space_z_min = 0
         
+        # レイアウト情報の最大値で設定
         self.width  = len(self.layout_data[0][0])
         self.height = len(self.layout_data[0])
         self.depth  = len(self.layout_data)
         
+        # 配列の添字用で最大値を設定
         self.space_x_max = self.width  - 1
         self.space_y_max = self.height - 1
         self.space_z_max = self.depth  - 1
         
+        # エージェントモデル空間の設定
         self.grid = ContinuousSpace3d(
             self.space_x_max, self.space_y_max, self.space_z_max, False, 
             self.space_x_min, self.space_y_min, self.space_z_min
         )
 
+        # エージェント行動情報の設定
         self.schedule = SimultaneousActivation(self)
 
         # 空調エージェントの配置
@@ -746,12 +798,18 @@ class HeatModel(Model):
         self.__set_init_agents_position()
 
     def next_control_data(self):
+        """ 次の時間の空調制御計画を設定するメソッド
+        """        
         try:
             self.current_control_data = next(self.control_data)
         except StopIteration:
             self.terminate = True
 
     def _reset_heat_source_temp(self):
+        """ 熱源情報を更新するメソッド
+            自身から最小距離になる空調エージェントの吸込温度に設定
+        """
+        # 熱源エージェントだけ取得
         for agent in self.grid._index_to_agent.values():
             if agent.__class__.__name__ =="HeatSource":
                 x_i,y_i,z_i = agent.pos
@@ -763,8 +821,9 @@ class HeatModel(Model):
                 agent.temp = self.init_bems_data["{}吸込温度".format(base_id)]
 
     def check_next_bems_data(self):
+        """ 次のBEMSデータが存在するかチェックするメソッド
+        """        
         if len(self.all_bems_data) > self.bems_data_num:
-            # cmp_time = datetime.strptime(self.all_bems_data[self.bems_data_num]["時間"].replace("/","-"), '%Y-%m-%d %H:%M:%S')
             cmp_time = self.all_bems_data[self.bems_data_num]["時間"]
             if self.time == cmp_time:
                 self.init_bems_data = self.all_bems_data[self.bems_data_num]
@@ -772,6 +831,9 @@ class HeatModel(Model):
                 self.bems_data_num += 1
 
     def remove_agents(self):
+        """ 削除対象に選ばれたエージェントを一括削除を行うメソッド
+            1分ごとに実行される
+        """
         remove_list = []
         for one in self.grid._index_to_agent.values():
             if one.unique_id in list(self.remove_agents_set):
@@ -784,9 +846,13 @@ class HeatModel(Model):
         self.remove_agents_set = set()
 
     def print_state(self):
+        """ 現在のシミュレーション時間を出力するメソッド
+        """        
         print("時間：{}".format(self.time))
 
     def step(self):
+        """ エージェントモデル全体の1ステップを定義したメソッド
+        """
         if not self.terminate:
             self.check_next_bems_data()
             self.per_time_dic["timestamp"] = self.time.strftime('%Y-%m-%d %H:%M:%S')
