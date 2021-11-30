@@ -54,6 +54,8 @@ def to_standard_format(tstr: str) -> str:
             format_time = str(datetime.datetime(year,month,day,hour,minute,0))
             
             return format_time
+    else:
+        return tstr
             
 
 

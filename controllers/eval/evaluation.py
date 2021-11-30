@@ -16,9 +16,9 @@ import matplotlib.ticker as ticker
 
 
 # 出力先フォルダパス
-output_dir_path = "eval/2021_08_23/"
+output_dir_path = "eval/2021_08_22_test_2/"
 # 読み込む結果ファイル
-out_file_path = 'out/result_2021_08_22_27_out_test2/cmp/result5.csv'
+out_file_path = 'out/result_2021_test/cmp/result5.csv'
 
 # 温度取りデータ比較フラグ
 observe_evaluation = True
@@ -27,7 +27,7 @@ observe_file_path = "data/evaluation/observe/all/observe1.csv"
 # 温度取りデータ位置座標ファイルパス
 position_data = "data/evaluation/observe/position.json"
 # 温度取り評価用結果データ
-simulation_data = "out/result_2021_08_22_27_out_test2/result5.json"
+simulation_data = "out/result_2021_test/result5.json"
 
 
 
@@ -133,7 +133,8 @@ def inhalation_temp_evaluation(out_file_path,output_dir):
     time = df_result.iloc[0]["時間"]
     dt_time = dt.strptime(time, '%Y-%m-%d %H:%M:%S')
 
-    base_dir = "data/evaluation/base/{0}_{1}_{2}/".format(dt_time.year,dt_time.month,dt_time.day)
+    # base_dir = "data/evaluation/base/{0}_{1}_{2}/".format(dt_time.year,dt_time.month,dt_time.day)
+    base_dir = "data/sample_data2/base/"
     base_file_path = base_dir + "all_bems_data{}.csv".format(floor)
 
     df_base = pd.read_csv(base_file_path,encoding="shift-jis")
@@ -160,7 +161,7 @@ def create_observe_graphe(df,column,dir_path):
     x = [i for i in range(len(df))]
     fig = plt.figure(figsize=(20,20))
     
-    x_label_time = [(len(x)//10)*i for i in range(11)]
+    x_label_time = [(len(x)//10)*i for i in range(10)]
     x_label_id = [df.iloc[i]["時間"] for i in x_label_time]
     
     min_temp = 18

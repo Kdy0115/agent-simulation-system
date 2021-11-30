@@ -38,6 +38,9 @@ HEAT_SOURCE_KIND_FLOOR   = 4
 HEAT_SOURCE_KIND_CEILING = 5
 HEAT_SOURCE_KIND_OTHERS  = 6
 
+# シミュレーションBEMSデータ再設定間隔（分）
+RESET_BEMS_DATA_SPAN = 30
+
 
 
 class Space(Agent):
@@ -593,7 +596,7 @@ class HeatModel(Model):
         space_z_max [int]               : 定義空間のz軸方向の最大値
         
     """    
-    def __init__(self,floor, simulation_step, init_bems_data, control_data, layout_data, source_data):
+    def __init__(self,floor, simulation_step, init_bems_data, control_data, layout_data, source_data,start_time,end_time):
         
         self.current_id =  0
         self.running = True
@@ -604,16 +607,13 @@ class HeatModel(Model):
         self.ac_position = layout_data["ac"]
         self.init_ac_coordinate_arr = []
 
-        self.bems_data_num = 0
-        self.all_bems_data = init_bems_data["bems_data"]
-        self.init_bems_data = self.all_bems_data[self.bems_data_num]
-        self.bems_data_num += 1
-
         self.floor = floor
         self.simulation_step = simulation_step
 
         self.control_data = control_data
         self.current_control_data = next(self.control_data)
+        
+        self.all_bems_data = init_bems_data["bems_data"]
         
         self.remove_agents_set = set()
         
@@ -622,12 +622,19 @@ class HeatModel(Model):
         self.ac_agents_list = []
         
         self.per_time_dic = {}
-        self.time = self.init_bems_data["時間"]
+        self.time = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
+        self.end_time = end_time
 
         self.source_data_info = -1
 
+        self.__set_init_bems_data()
         self.__set_init_layout()
 
+    def __set_init_bems_data(self):
+        self.bems_data_num = 0
+        self.init_bems_data = self.all_bems_data[self.bems_data_num]
+        # self.bems_data_num += 1
+        
     def __set_init_ac_agents(self):
         """ 空調エージェントの配置を行うメソッド
             init_bems_data内のデータを参照して配置
@@ -822,13 +829,15 @@ class HeatModel(Model):
 
     def check_next_bems_data(self):
         """ 次のBEMSデータが存在するかチェックするメソッド
-        """        
-        if len(self.all_bems_data) > self.bems_data_num:
-            cmp_time = self.all_bems_data[self.bems_data_num]["時間"]
+        """       
+
+        if (len(self.all_bems_data) > self.bems_data_num) and (self.bems_data_num % RESET_BEMS_DATA_SPAN == 0) and (self.bems_data_num != 0):
+            cmp_time = self.all_bems_data[self.bems_data_num]["時間"]    
             if self.time == cmp_time:
                 self.init_bems_data = self.all_bems_data[self.bems_data_num]
+                print(self.init_bems_data,cmp_time)
                 self._reset_heat_source_temp()
-                self.bems_data_num += 1
+        self.bems_data_num += 1
 
     def remove_agents(self):
         """ 削除対象に選ばれたエージェントを一括削除を行うメソッド
@@ -854,12 +863,11 @@ class HeatModel(Model):
         """ エージェントモデル全体の1ステップを定義したメソッド
         """
         if not self.terminate:
-            self.check_next_bems_data()
             self.per_time_dic["timestamp"] = self.time.strftime('%Y-%m-%d %H:%M:%S')
-            # self.per_time_dic["timestamp"] = self.time
             self.per_time_dic["agent_list"] = []
             self.schedule.step()
             if self.time.second == 0:
+                self.check_next_bems_data()
                 self.next_control_data()
                 self.spaces_agents_list.append(self.per_time_dic)
                 # print(len(self.per_time_dic))

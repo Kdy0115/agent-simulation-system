@@ -227,9 +227,6 @@ class DataSet():
         # 初期値BEMSデータの読み込み
         self.__import_bems_data()
         
-        # 制御計画データとBEMSデータの同期
-        # self._sync_control_data()
-        
         # フロアレイアウトデータの読み込み
         self.import_all_layout_data()
         
