@@ -37,7 +37,16 @@ class SimulationControl():
         self.dataclass = dataclass
 
         for data in self.dataset:
-            model = HeatModel(data["init_bems_data"]["floor"], self.simulation_step, data["init_bems_data"], data["control_data"],data["layout_data"],data["source_data"])
+            model = HeatModel(
+                data["init_bems_data"]["floor"], 
+                self.simulation_step, 
+                data["init_bems_data"], 
+                data["control_data"],
+                data["layout_data"],
+                data["source_data"],
+                self.dataclass.simulation_start_time,
+                self.dataclass.simulation_end_time
+            )
             self.models_floor_dic[data["init_bems_data"]["floor"]] = model
 
 
@@ -51,17 +60,6 @@ class SimulationControl():
         print("Simulation Calculation Steps: {}".format(self.simulation_step))
         time.sleep(0.1)
         print("Simulation Results Folder: {}".format(self.output_folder))
-        
-        
-
-    # def output_agent_json(self):
-    #     """
-    #     """        
-    #     for result in self.output_data:
-    #         print('{0}/result{1}.json'.format(self.output_folder,result[0]))
-    #         fw = open('{0}/result{1}.json'.format(self.output_folder,result[0]),'w')
-    #         json.dump(result[1],fw,indent=4)
-            
             
 
     def run_simulation(self,key,model,i):
