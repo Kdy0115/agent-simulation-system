@@ -16,9 +16,9 @@ import matplotlib.ticker as ticker
 
 
 # 出力先フォルダパス
-output_dir_path = "eval/2021_08_22_test_2/"
+output_dir_path = "eval/2021_08_24_25/"
 # 読み込む結果ファイル
-out_file_path = 'out/result_2021_test/cmp/result5.csv'
+out_file_path = 'out/result_2021_08_24_25/cmp/result5.csv'
 
 # 温度取りデータ比較フラグ
 observe_evaluation = True
@@ -27,7 +27,7 @@ observe_file_path = "data/evaluation/observe/all/observe1.csv"
 # 温度取りデータ位置座標ファイルパス
 position_data = "data/evaluation/observe/position.json"
 # 温度取り評価用結果データ
-simulation_data = "out/result_2021_test/result5.json"
+simulation_data = "out/result_2021_08_24_25/result5.json"
 
 
 
