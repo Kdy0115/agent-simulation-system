@@ -64,13 +64,33 @@ class Space(Agent):
         self.temp = temp
         self.energy = self.temp * self.capacity
         self.neighbors_list = []
+        self.neighbors_upper_space_agent = None
+        self.model = model
         
+    def natural_convection_heat(self):
+        """ 自然対流による熱交換を行うメソッド
+        """
+        
+        if self.neighbors_upper_space_agent == None:
+            for agent in self.neighbors_list:
+                if self.pos[2] + 1 == agent.pos[2]:
+                    self.neighbors_upper_space_agent = agent
+        # 鉛直上の空間エージェントを見て温度が小さければ鉛直上方向に自然対流熱荷を放出する。
+        if self.neighbors_upper_space_agent != None:
+            if self.neighbors_upper_space_agent.temp <= self.temp:
+                space_heat_charge = SpaceHeatCharge(self.model.next_id(),self.model,self)
+                self.model.schedule.add(space_heat_charge)
+                self.model.grid.place_agent(space_heat_charge, self.pos)
+            
     def exchange_heat(self):
-        """ 隣接する空間と熱交換を行うモジュール
+        """ 隣接する空間と熱交換を行うメソッド
         """        
         
         if len(self.neighbors_list) < 1:
-            self.neighbors_list = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
+            all_neighbors_list = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
+            for one in all_neighbors_list:
+                if one.__class__.__name__ == "Space":
+                    self.neighbors_list.append(one)
         for other in self.neighbors_list:
             if other.__class__.__name__ == "Space":
                 sum_heat = abs(self.temp - other.temp) * ALPHA
@@ -99,9 +119,57 @@ class Space(Agent):
         """
         
         self.exchange_heat()
+        self.natural_convection_heat()
         self.output_space_agent()
+
+
+    
+class SpaceHeatCharge(Agent):
+    """ 自然対流時に発生する熱荷
+
+    Attributes:
+        Agent ([type]): [description]
+    """    
+    def __init__(self, unique_id, model, space):
+        super().__init__(unique_id, model)
+        self.temp = space.temp
+        self.pos = space.pos
+        self.model = model
         
+    def move(self):
+        """ 天井側に移動していく（z軸方向に1ずれる）
+        """     
+        new_pos = (self.pos[0],self.pos[1],self.pos[2]+1)   
+        self.model.grid.move_agent(self,new_pos)
         
+    def convection_heat(self):
+        """ 空間に自然対流による熱伝達を行うメソッド
+        """        
+        target_agent = -1
+        neighbors_list = self.model.grid.get_neighbors(self.pos, 0, include_center=False)
+        for agent in neighbors_list:
+            if agent.__class__.__name__ == "Space":
+                target_agent = agent
+                break
+        
+        if target_agent != -1:
+            heat = abs(self.temp - target_agent.temp) * N_BETA
+            self.space.energy -= heat
+            self.space.temp -= heat/self.space.capacity
+            target_agent.energy += heat
+            target_agent.temp += heat/target_agent.capacity
+        
+    def add_remove_agents(self):
+        """ エージェント削除リストへエージェントを追加するメソッド
+        """        
+        self.model.remove_agents_set.add(self.unique_id)
+        
+    def step(self):
+        self.move()
+        self.convection_heat()
+        self.add_remove_agents()
+                
+
         
 class HeatSource(Agent):
     """ 壁や床などの熱源を表す熱源エージェントクラス
@@ -373,8 +441,9 @@ class HeatCharge(Agent):
                 target_agents_list.append(barrier)
 
         for agent in target_agents_list:
-                if (self.energy < 0 and self.temp < agent.temp) or (self.energy > 0 and self.temp > agent.temp):
-                    # energy = self.energy * GAMMA
+            if (self.energy < 0 and self.temp < agent.temp) or (self.energy > 0 and self.temp > agent.temp):
+                # energy = self.energy * GAMMA
+                if barrier.__class__.__name__ != "SpaceHeatCharge":
                     energy = self.energy / len(target_agents_list)
                     barrier.energy += energy
                     barrier.temp += energy / agent.capacity

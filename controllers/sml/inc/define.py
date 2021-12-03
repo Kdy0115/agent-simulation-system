@@ -1,13 +1,19 @@
+# -*- coding: utf-8 -*-
+# シミュレーションモデルに必要なパラメータの値
+
+
 # Change heat model[α] （熱交換モデル）
-ALPHA = 0.10
-# ALPHA = 0.49
+# ALPHA = 0.10
+ALPHA = 0.49
+# Natural convection heat model（自然対流モデル）
+N_BETA = 0.30
 # Convection heat model[β] （強制対流モデル）
-BETA = 0.061
-# BETA = 0.61
+# BETA = 0.061
+BETA = 0.61
 # Radiation heat model[γ] （輻射熱モデル）
 # GAMMA = 0.036
-GAMMA = 0.072
-# GAMMA = 0.36
+# GAMMA = 0.072
+GAMMA = 0.36
 # Heat charge init radius （熱荷の初期半径）
 INIT_HEAT_CHARGE_RADIUS = 0.45
 # Heaet charge change rate （熱荷の変化率）
