@@ -13,6 +13,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
     <script type="text/javascript" src="/eel.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 </head>
 
 <body>
@@ -86,18 +87,24 @@
           </select>
         </div>
       </div>
-      <a id="control-button-start" onclick="post_result();" class="waves-effect waves-light btn-large">読み込み</a>
+      <a id="control-button-start" onclick="post_result();" class="waves-effect waves-light btn-large">送信</a>
     </div>
     <div id="title">
       <h6 id="title-text" class="left-align">ヒートマップ</h6>
     </div>
     <div class="row">
       <div id="heatmap" class="col s6 heatmap-box">
-        あいうえおかきくえっこ
         <canvas id="heatMap" class="heatmap-canvas"></canvas>
       </div>
       <div id="heatmap-graphes" class="col s6 heatmap-graphes">
-        さしすせそたちつてと
+      </div>
+    </div>
+    <div id="title">
+      <h6 id="title-text" class="left-align">結果グラフ</h6>
+    </div>
+    <div class="row">
+      <div id="all-graphes" class="col s6 result-graphes">
+        <canvas id="my-graph" width="800" height="450"></canvas>
       </div>
     </div>
   </div>

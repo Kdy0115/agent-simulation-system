@@ -5,13 +5,67 @@
     <title>Thermal Environment Simulator</title>
 
     <!-- Library import -->
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <link rel="stylesheet" href="materialize/css/materialize.css">
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/confirm.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css'>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
     <script type="text/javascript" src="/eel.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 </head>
 
 <body>
+  <div class="content-all">
+  <!-- ナビゲーションメニュー-->
+    <nav>
+      <div class="nav-wrapper blue-grey darken-4">
+        <a href="index.html" class="brand-logo">Thermal Environment Simulator</a>
+        <ul id="nav-mobile" class="menu-ul right hide-on-med-and-down">
+          <li class="menu-list"><a class='dropdown-trigger' href="#"data-target='dropdown1'>設定</a></li>
+          <li class="menu-list"><a class='dropdown-trigger' href="#"data-target='dropdown2'>シミュレーション</a></li>
+          <li class="menu-list"><a class='dropdown-trigger' href="#"data-target='dropdown3'>分析</a></li>
+        </ul>
+      </div>
+      <ul id='dropdown1' class='dropdown-content'>
+        <li><a class="blue-grey-text darken-4" href="configuration.html">初期設定</a></li>
+        <li><a class="blue-grey-text darken-4" href="configuration.html">レイアウト設定</a></li>
+      </ul>
+      <ul id='dropdown2' class='dropdown-content'>
+        <li><a class="blue-grey-text darken-4" href="simulation.html">実行</a></li>
+        <li><a class="blue-grey-text darken-4" href="confirm.html">結果確認</a></li>
+      </ul>
+      <ul id='dropdown3' class='dropdown-content'>
+        <li><a class="blue-grey-text darken-4" href="analytics.html">評価</a></li>
+        <li><a class="blue-grey-text darken-4" href="analytics.html">チューニング</a></li>
+      </ul>
+    </nav>
+
     <h2>分析</h2>
-    <div id="root"></div>
-    <script type="text/javascript" src="../js/index.js"></script>
+    <div id="root">
+        <div id="result-form" class="console" style="background-color: white; height: 400px;margin-left: 100px;margin-right: 100px;margin-top: 100px;">
+      <div class="row">
+        <div class="input-field col s12">
+          <h6>結果フォルダの選択</h6>
+          <select id="input-select" style="display:block;">
+            <option value="nothing">選択してください</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="input-field col s12">
+          <h6>フロアの選択</h6>
+          <select id="floor-select" style="display:block;" disabled>
+            <option value="nothing">結果フォルダを選択してください</option>
+          </select>
+        </div>
+      </div>
+      <a id="control-button-start" onclick="post_result();" class="waves-effect waves-light btn-large">送信</a>
+    </div>
+    
+    </div>
+ </div>
+    <script type="text/javascript" src="../js/analytics.js"></script>
 </body>
 </html>

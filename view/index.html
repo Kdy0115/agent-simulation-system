@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Thermal Environment Simulator</title>
 
-    <!-- jsとpythonをつなぐためにeelを使用する。 -->
+    <!-- eelを使用するため -->
     <script type="text/javascript" src="/eel.js"></script>
 </head>
 <body>
@@ -21,25 +21,27 @@
     <div id="content">
         <h1>環境設定</h1>
 
+        <button type='button' id="form_add_button" onclick="first_read()">初期値読み込み</button>
+
         <div id='setting_input'>
             <label>シミュレーション開始日時</label><br>
-            <input type="datetime-local" id="strat_time" placeholder="5桁以内で入力"><br>
+            <input type="datetime-local" id="start_time" placeholder="5桁以内で入力"><br>
 
             <label>シミュレーション終了日時</label><br>
             <input type="datetime-local" id="finish_time" placeholder="5桁以内で入力"><br>
         
             <label>BEMSファイル（評価用データ）のパスを入力</label><br>
-            <input type="text" id="bems_folder_place" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
+            <input type="text" id="bems_folder_path" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
         
             <label>制御計画フォルダのパスを入力</label><br>
-            <input type="text" id="control_folder_place" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
+            <input type="text" id="control_folder_path" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
 
 
 
             <p>空間レイアウト</p>
 
             <label>シミュレーションを行う階のレイアウトファイルパスを入力</label><br>
-            <input type="text" id="layout_input_folder_place0" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
+            <input type="text" id="layout_input_folder_path0" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
 
             <div id="layout_folder_inputform"></div>
             
@@ -47,19 +49,19 @@
             <button type='button' id="form_remove_button" onclick="form_remove();">フォーム削除</button><br>
 
             <label>シミュレーションを行う階のスケルトンファイルパスを入力</label><br>
-            <input type="text" id="skeleton_layout_input_folder_place0" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
+            <input type="text" id="skeleton_layout_input_folder_path0" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
             
             <div id="skeletom_layout_folder_inputform"></div>
 
             <label>シミュレーションを行う階の熱源情報フォルダのパスを入力</label><br>
-            <input type="text" id="hot_position_folder_place0" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
+            <input type="text" id="hot_position_folder_path0" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
 
             <div id="hot_position_folder_inputform"></div>
 
 
 
             <br><label>出力先フォルダのパスを入力</label><br>
-            <input type="text" id="input_folder_place" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
+            <input type="text" id="output_folder_path" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
         </div>
 
         <div class="config-save">

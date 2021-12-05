@@ -3,6 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <title>Thermal Environment Simulator</title>
+
+    <link rel="stylesheet" href="heatmap.css"/>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+
+    <!-- eelを使用するため -->
+    <script type="text/javascript" src="/eel.js"></script>
+
+    
 </head>
 <body>
     <!-- メニュー -->
@@ -21,8 +30,8 @@
             <h2>ログ</h2>
 
 
-            <button type='button' id="start_program_button" onclick="start_program();">実行</button>
-            <button type='button' id="stop_program_button" onclick="stop_program();">停止</button><br>
+            <button type='button' id="start_simulation_button" onclick="start_simulation();">実行</button>
+            <button type='button' id="stop_simulation_button" onclick="stop_simulation();">停止</button><br>
 
         </div>
         <div id ="result">
@@ -42,6 +51,23 @@
             </select>
 
             <h2>ヒートマップ</h2>
+            <h3>ヒートマップ開始の時間</h3>
+            <input type="datetime-local" id="strat_time"><br>
+            <h3>ヒートマップ終了の時間</h3>
+            <input type="datetime-local" id="end_time"><br>
+            <button type='button' id="print_heatmap" onclick="print_heatmap();">ヒートマップを表示</button>
+<!--
+            <div style="height:400px; width:800px">
+                <canvas id="heatMap1"></canvas>
+            </div>
+
+-->
+            <div class="demo-wrapper">
+                <div class="heatmap" id='heatmap'>
+                </div>
+            </div>
+            
+
             <h2>グラフを表示する数を指定</h2>
             <select name="number_of_graph">
                 <option value="one">1個</option>
@@ -61,7 +87,7 @@
             <input type="radio" name="height" value="floor">床
 
             <h2>グラフ</h2>
-
+            <canvas id="stage"></canvas>
 
 
         </div>
@@ -69,5 +95,8 @@
         
 
     </div>
+<script type="text/javascript" src="js/doing.js"></script>
+<script src="js/heatmap.min.js"></script>
+<script type="text/javascript" src="js/test_heatmap.js"></script>
 </body>
 </html>
