@@ -2,6 +2,9 @@
 controllers/cvt/__pycache__/
 controllers/sml/inc/__pycache__/
 
+# config files
+config/
+
 # Data files
 # bems/
 artisoc/
@@ -14,6 +17,7 @@ data/
 # Cache files
 *.pyc
 __pycache__/
+.cache/
 
 ubuntu-xenial-16.04-cloudimg-console.log
 
@@ -24,7 +28,7 @@ docs/
 LICENSE
 
 # Shell files
-*.sh
+.bash_history
 
 # Vagrant files
 .vagrant
@@ -35,3 +39,6 @@ bems/
 
 # evaluation file
 eval/
+
+# Readme file
+README.md

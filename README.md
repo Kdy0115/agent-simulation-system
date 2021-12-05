@@ -1,6 +1,6 @@
 thermal agent simulation system
 ===============================
-## System Concept
+## システムコンセプト
 ![system concept](system_concept.png?raw=true "System concept")
 
 
@@ -10,9 +10,9 @@ thermal agent simulation system
 - シミュレーション結果の可視化による温度変化の分析
 - 高速計算
 
-
+-------------------------
 実行環境
---------
+-------------------------
 - Python 3.7.6: https://www.python.org/downloads/release/python-376/
 
 ### python package
