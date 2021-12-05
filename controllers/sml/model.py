@@ -1,36 +1,96 @@
 # -*- coding: utf-8 -*-
 
-""" シミュレーションモデルの定義モジュール
+""" 
+シミュレーションモデルの定義モジュール
+以下の3つの機能を担当しています。
+・各エージェントの行動ルールや属性値の定義
+・エージェントシミュレーション空間全体の構成
+・エージェントシミュレーションの実行や管理
+
+※サードパーティのライブラリであるmesaのクラスからオーバーライドして使用しています。
+mesaの詳細 https://mesa.readthedocs.io/en/stable/
+./controllers/sml/extension/spaces/space_extension.pyに空間設定のクラスがあります。
 """
 
 
 
-from controllers.sml.extension.spaces.space_extension import ContinuousSpace3d
+# python lib
 from mesa.time import SimultaneousActivation
 from mesa import Agent, Model
-from controllers.sml.inc.define import *
 import numpy as np
-import random
+import sys
 import math
-import copy
 from datetime import datetime, timedelta
+
+# utils
+from controllers.sml.extension.spaces.space_extension import ContinuousSpace3d
+from controllers.sml.inc.define import *
+from controllers import error
+
+
+
+# エージェント種別識別用タグ
+NOT_AGENT_KIND           = 0
+HEAT_KIND_SPACE          = 1
+HEAT_SOURCE_KIND_WINDOW  = 2
+HEAT_SOURCE_KIND_BARRIER = 3
+HEAT_SOURCE_KIND_FLOOR   = 4
+HEAT_SOURCE_KIND_CEILING = 5
+HEAT_SOURCE_KIND_OTHERS  = 6
+
+# シミュレーションBEMSデータ再設定間隔（分）
+RESET_BEMS_DATA_SPAN = 30
 
 
 
 class Space(Agent):
+    """ 空間エージェントクラス
+    　　室内の空間自体を表しています。1立方メートルの大きさと仮定
+        mesaのエージェントクラスをオーバーライド
+
+    Attributes:
+        pos [tupple]         : 空間エージェントの位置座標
+        temp [float]         : 空間エージェントの温度
+        energy [float]       : 空間エージェントの保有エネルギー
+        neighbors_list [list]: 空間エージェントの周囲のエージェントのIDが入ったリスト（探索時間を節約するため）
+        capacity [float]     : 空間エージェントの熱容量
+    """    
+    
     capacity = SPACE_HEAT_CAPACITY
-    """ An agent with fixed initial wealth."""
+    
     def __init__(self, unique_id, model, pos, temp):
         super().__init__(unique_id, model)
         self.pos = pos
         self.temp = temp
         self.energy = self.temp * self.capacity
         self.neighbors_list = []
-
+        self.neighbors_upper_space_agent = None
+        self.model = model
+        
+    def natural_convection_heat(self):
+        """ 自然対流による熱交換を行うメソッド
+        """
+        
+        if self.neighbors_upper_space_agent == None:
+            for agent in self.neighbors_list:
+                if self.pos[2] + 1 == agent.pos[2]:
+                    self.neighbors_upper_space_agent = agent
+        # 鉛直上の空間エージェントを見て温度が小さければ鉛直上方向に自然対流熱荷を放出する。
+        if self.neighbors_upper_space_agent != None:
+            if self.neighbors_upper_space_agent.temp <= self.temp:
+                space_heat_charge = SpaceHeatCharge(self.model.next_id(),self.model,self)
+                self.model.schedule.add(space_heat_charge)
+                self.model.grid.place_agent(space_heat_charge, self.pos)
+            
     def exchange_heat(self):
-        # neighbor_spaces = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
+        """ 隣接する空間と熱交換を行うメソッド
+        """        
+        
         if len(self.neighbors_list) < 1:
-            self.neighbors_list = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
+            all_neighbors_list = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
+            for one in all_neighbors_list:
+                if one.__class__.__name__ == "Space":
+                    self.neighbors_list.append(one)
         for other in self.neighbors_list:
             if other.__class__.__name__ == "Space":
                 sum_heat = abs(self.temp - other.temp) * ALPHA
@@ -41,6 +101,9 @@ class Space(Agent):
                     self.temp  -= sum_heat/self.capacity
 
     def output_space_agent(self):
+        """ エージェントの状態を保存するモジュール
+        """
+        
         agent_data = {
             "id"    : self.unique_id,
             "temp"  : self.temp,
@@ -52,11 +115,79 @@ class Space(Agent):
         self.model.per_time_dic["agent_list"].append(agent_data)
 
     def step(self):
+        """ 空間エージェントの各ステップの行動ルールを定義したモジュール
+        """
+        
         self.exchange_heat()
+        self.natural_convection_heat()
         self.output_space_agent()
 
+
+    
+class SpaceHeatCharge(Agent):
+    """ 自然対流時に発生する熱荷
+
+    Attributes:
+        Agent ([type]): [description]
+    """    
+    def __init__(self, unique_id, model, space):
+        super().__init__(unique_id, model)
+        self.temp = space.temp
+        self.pos = space.pos
+        self.model = model
+        
+    def move(self):
+        """ 天井側に移動していく（z軸方向に1ずれる）
+        """     
+        new_pos = (self.pos[0],self.pos[1],self.pos[2]+1)   
+        self.model.grid.move_agent(self,new_pos)
+        
+    def convection_heat(self):
+        """ 空間に自然対流による熱伝達を行うメソッド
+        """        
+        target_agent = -1
+        neighbors_list = self.model.grid.get_neighbors(self.pos, 0, include_center=False)
+        for agent in neighbors_list:
+            if agent.__class__.__name__ == "Space":
+                target_agent = agent
+                break
+        
+        if target_agent != -1:
+            heat = abs(self.temp - target_agent.temp) * N_BETA
+            self.space.energy -= heat
+            self.space.temp -= heat/self.space.capacity
+            target_agent.energy += heat
+            target_agent.temp += heat/target_agent.capacity
+        
+    def add_remove_agents(self):
+        """ エージェント削除リストへエージェントを追加するメソッド
+        """        
+        self.model.remove_agents_set.add(self.unique_id)
+        
+    def step(self):
+        self.move()
+        self.convection_heat()
+        self.add_remove_agents()
+                
+
+        
 class HeatSource(Agent):
-    """ An agent with fixed initial wealth."""
+    """ 壁や床などの熱源を表す熱源エージェントクラス
+    　　想定している熱源は　窓、壁、床、天井、人やPCなどの熱源
+      　同様に1立方メートルを想定
+    　　mesaのエージェントクラスをオーバーライド
+
+    Attributes:
+        pos [tupple]         : 熱源エージェントの位置座標
+        temp [float]         : 熱源エージェントの温度
+        energy [float]       : 熱源エージェントのエネルギー
+        kind [int]           : 熱源エージェントの種別
+        model [HeatModel]    : 空間モデル
+        base_ac_id [list]    : 空調のIDが格納された配列
+        capacity [float]     : 熱源エージェントの熱容量
+        neighbors_list [list]: 周囲の隣接するエージェントのIDが格納されたリスト
+    """    
+    
     def __init__(self, unique_id, model, pos, temp, kind, base_ac_id):
         super().__init__(unique_id, model)
         self.pos = pos
@@ -64,10 +195,11 @@ class HeatSource(Agent):
         self.kind = kind
         self.model = model
         self.base_ac_id = base_ac_id
-        if self.kind == 1:
+        
+        if self.kind == HEAT_SOURCE_KIND_WINDOW:
             self.capacity = WINDOW_HEAT_CAPACITY
         # 室内の熱源のとき
-        elif self.kind == 5:
+        elif self.kind == HEAT_SOURCE_KIND_OTHERS:
             self.capacity = 1
         else:
             self.capacity = OTHER_SOURCE_HEAT_CAPACITY
@@ -75,21 +207,23 @@ class HeatSource(Agent):
         self.neighbors_list = []
 
     def server_room_barrier_setting(self):
-        # サーバー側の壁のとき
+        """ サーバールーム側の温度の設定を行うモジュール
+        """        
+        # サーバー側の壁のときは常に25℃に設定
         if self.model.space_y_max == self.pos[1]:
             self.temp = 25
             self.energy = self.temp * self.capacity
 
     def radiant_heat(self):
+        """ 隣接する空間に熱放射を行うモジュール
+        """
+        
         if len(self.neighbors_list) < 1:
             self.neighbors_list = self.model.grid.get_neighbors(self.pos, 1, include_center=False)            
         for other in self.neighbors_list:
             if other.__class__.__name__ == "Space":
-                # if ((self.model.time.second == 0)) and ((self.model.time.minute == 0) or (self.model.time.minute == 30)):
-                #     print("障害物が渡すエージェントの数")
-                #     print(self.pos,self.kind,len(self.neighbors_list))
-                # 人の場合
-                if self.kind == 5:
+                # 人の場合は自身のプロパティは変更されない
+                if self.kind == HEAT_SOURCE_KIND_OTHERS:
                     sum_heat = (abs(self.temp - other.temp) * HUMAN_HEAT_RATIO) / len(self.neighbors_list)
                     # if self.temp > other.temp:
                     other.energy += sum_heat
@@ -107,10 +241,10 @@ class HeatSource(Agent):
                         self.temp  += sum_heat/self.capacity
                         other.energy -= sum_heat
                         other.temp -= sum_heat/other.capacity
-                    # if ((self.model.time.second == 0)) and ((self.model.time.minute == 0) or (self.model.time.minute == 30)):
-                    #     print(other.temp)
 
     def out_barrier_agent(self):
+        """　
+        """        
         agent_data = {
             "id"    : self.unique_id,
             "temp"  : self.temp,
@@ -124,7 +258,7 @@ class HeatSource(Agent):
 
     def update_temp(self):
         # 室内の熱源以外のとき
-        if self.kind != 5:
+        if self.kind != HEAT_SOURCE_KIND_OTHERS:
             self.temp = self.model.init_bems_data["{}吸込温度".format(self.base_ac_id)]
             self.energy = self.temp * self.capacity
             # if self.base_ac_id == "5f6" or self.base_ac_id == "5f7" or self.base_ac_id == "5f8":
@@ -140,7 +274,7 @@ class HeatSource(Agent):
         self.server_room_barrier_setting()
         start_time = datetime(self.model.time.year,self.model.time.month,self.model.time.day,8,0,0)
         end_time   = datetime(self.model.time.year,self.model.time.month,self.model.time.day,17,0,0)
-        if ((self.kind == 5) and (self.model.time < start_time or self.model.time > end_time)):
+        if ((self.kind == HEAT_SOURCE_KIND_OTHERS) and (self.model.time < start_time or self.model.time > end_time)):
             pass
         else:
             self.radiant_heat()
@@ -148,7 +282,11 @@ class HeatSource(Agent):
         
 
 class HeatCharge(Agent):
-    """ An agent with fixed initial wealth."""
+    """ 熱荷エージェントのモデル
+
+    Attributes:
+        Agent ([type]): [description]
+    """    
     def __init__(self, unique_id, model, pos, ac, angle):
         super().__init__(unique_id, model)
         self.pos = pos
@@ -181,16 +319,12 @@ class HeatCharge(Agent):
         if self.radius >= 5:
             self.radius = 5
         else:
-            # self.radius *= (1 + self.change_rate)
             self.radius *= math.exp(1/self.change_rate)
         
         if not self.out_of_spaces(new_pos):
             self.model.grid.move_agent(self,new_pos)
-        # if self.out_of_spaces() or self.convergence_verocity() or self.convergence_energy():
-        #     self.model.remove_agents_list.append(self)
 
     def add_remove_agents(self):
-        # if self.out_of_spaces(self.pos) or self.convergence_verocity() or self.convergence_energy() or self.check_change_energy():
         if self.out_of_spaces(self.pos) or self.convergence_verocity() or self.check_change_energy():
             self.model.remove_agents_set.add(self.unique_id)
 
@@ -282,7 +416,6 @@ class HeatCharge(Agent):
                     else:
                         # 空間エネルギーの方が温度が大きいとき
                         if self.temp > other.temp:
-                            # if sum_heat > self.energy:
                             other.energy += sum_heat
                             other.temp   += sum_heat / SPACE_HEAT_CAPACITY
                             self.energy  -= sum_heat
@@ -304,18 +437,18 @@ class HeatCharge(Agent):
 
         for barrier in neighbor_barriers:
             # 熱源エージェントのときでかつ人やPCなどの熱源以外の障害物に対して
-            if barrier.__class__.__name__ == "HeatSource" and barrier.kind != 5:
+            if barrier.__class__.__name__ == "HeatSource" and barrier.kind != HEAT_SOURCE_KIND_OTHERS:
                 target_agents_list.append(barrier)
 
         for agent in target_agents_list:
-                if (self.energy < 0 and self.temp < agent.temp) or (self.energy > 0 and self.temp > agent.temp):
-                    # energy = self.energy * GAMMA
+            if (self.energy < 0 and self.temp < agent.temp) or (self.energy > 0 and self.temp > agent.temp):
+                # energy = self.energy * GAMMA
+                if barrier.__class__.__name__ != "SpaceHeatCharge":
                     energy = self.energy / len(target_agents_list)
                     barrier.energy += energy
                     barrier.temp += energy / agent.capacity
                     self.energy -= energy
                     remove_agent = True
-                    # self.model.remove_agents_list.append(self)
 
         if remove_agent:
             # エネルギー交換が終わったら削除エージェントへ追加
@@ -333,7 +466,6 @@ class HeatCharge(Agent):
                 speed = abs(agt1.speed - agt2.speed)
             
             return angle,speed
-            
 
         neighbor_spaces = self.model.grid.get_neighbors(self.pos, int(self.speed + self.radius), include_center=False)
         for other in neighbor_spaces:
@@ -341,29 +473,21 @@ class HeatCharge(Agent):
                 d = self.model.grid.get_distance(other.pos, self.pos)
                 # 衝突条件を満たすとき
                 if d < (other.radius + self.radius) and (other.angle != self.angle) and (other.direction != self.direction):
-                    # print(other.angle,self.angle,other.direction,self.direction)
-                    # print(self.temp,other.temp)
                     angle,speed = _decision_angle(self,other)
                     if self.radius > other.radius:
                         self.angle = angle
                         self.speed = speed
                         self.energy = (other.energy + self.energy) / 2
-                        # self.temp += other.energy / SPACE_HEAT_CAPACITY
-                        # self.temp = (self.temp + other.temp) / 2
                         self.temp = self.temp + other.temp / SPACE_HEAT_CAPACITY
-                        # self.model.remove_agents_list.append(other)
                         self.model.remove_agents_set.add(other.unique_id)
                         # print(self.temp)
                     else:
                         other.angle = angle
                         other.speed = speed
                         other.energy = (self.energy + other.energy) / 2
-                        # other.temp += self.energy / SPACE_HEAT_CAPACITY
                         other.temp = (self.temp + other.temp) / 2
-                        # self.model.remove_agents_list.append(self)
                         self.model.remove_agents_set.add(self.unique_id)
                     break
-
 
     def output_space_agent(self):
         agent_data = {
@@ -383,6 +507,8 @@ class HeatCharge(Agent):
         self.add_remove_agents()
         self.output_space_agent()
         self.move()
+        
+        
 
 class AirConditioner(Agent):
     """ An agent with fixed initial wealth."""
@@ -397,6 +523,7 @@ class AirConditioner(Agent):
         self.observe_temp = observe_temp
         self.model = model
         model.ac_agents_list.append(self)
+        self.nearest_space = None
 
     def output_ac_data(self):
         agent_data = {
@@ -409,6 +536,7 @@ class AirConditioner(Agent):
             "release_temp"  : self.release_temp,
             "mode"          : self.mode,
             "setting_temp"  : self.set_temp,
+            "class"         : "ac"
         }
         self.model.per_time_dic["agent_list"].append(agent_data)
 
@@ -426,12 +554,24 @@ class AirConditioner(Agent):
         self.release_temp = self.set_temp
 
     def _switch_thermo(self):
-        neighbor_spaces = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
-        space_temp_list = []
-        for space in neighbor_spaces:
-            if space.__class__.__name__ == "Space":
-                space_temp_list.append(space.temp)
-        observe_temp = sum(space_temp_list)/len(space_temp_list)
+        # neighbor_spaces = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
+        # space_temp_list = []
+        # for space in neighbor_spaces:
+        #     if space.__class__.__name__ == "Space":
+        #         space_temp_list.append(space.temp)
+        # observe_temp = sum(space_temp_list)/len(space_temp_list)
+        observe_temp = -100
+        if self.nearest_space is None:
+            neighbor_spaces = self.model.grid.get_neighbors(self.pos, 1, include_center=True)
+            for space in neighbor_spaces:
+                if space.__class__.__name__ == "Space":
+                    if (self.pos[0] == space.pos[0]) and (self.pos[1] == space.pos[1]) and (self.pos[2] == space.pos[2]):
+                        observe_temp = space.temp
+            if observe_temp == -100:
+                sys.exit(error.SPACE_DEFINITION_ERROR)
+        else:
+            observe_temp = self.nearest_space.temp
+            
         if self.mode == 1:
             if observe_temp - self.set_temp > 0.5:
                 self.thermo = False
@@ -466,7 +606,6 @@ class AirConditioner(Agent):
                 self.power += INIT_AC_ENERGY * abs(self.release_temp - self.set_temp)
                 # print("熱荷温度：{0}熱荷エネルギー{1}".format(heat.temp,heat.energy))
 
-
     def see_class(self):
         print("時間：{}".format(self.model.time))
         print("-----------------------------------------------")
@@ -489,202 +628,264 @@ class AirConditioner(Agent):
         self.output_ac_data()
 
 
+
 class HeatModel(Model):
-    """A model with some number of agents.（複数のエージェントを持つHeatModelクラス）
+    """ 複数のエージェントを持つHeatModelクラス
+        各エージェントの情報と空間情報を対応付けるクラス
+        Modelクラスをオーバーライド
 
-    Args:
-        Model (Model): Override from Model class
+    Attributes
+        current_id [int]                : model自体のID
+        running [bool]                  : modelの実行状態
+        terminate [bool]                : シミュレーション終了識別フラグ
+        layout_data [dict]              : レイアウト情報が格納されたデータ
+        source_data [dict]              : 熱源情報が格納されたデータ
+        ac_position [dict]              : 空調情報が格納されたデータ
+        bems_data_num [int]             : BEMSデータ更新のインクリメント変数
+        all_bems_data [dict]            : 全ての時間ごとのBEMSデータが格納されたデータ
+        init_bems_data [dict]           : 現在の単一のBEMSデータ
+        floor [int]                     : フロア
+        simulation_step [int]           : シミュレーションステップ数
+        control_data [dict]             : 全ての空調制御計画情報が格納されたデータ
+        current_control_data [itterator]: 現在の空調制御計画情報が格納されたデータ
+        remove_agents_set [set]         : 削除対象エージェントが格納された集合
+        spaces_agents_list [list]       : 全ての空間エージェントの情報が格納されたリスト
+        heat_charge_agents_list [list]  : 全ての熱荷エージェントの情報が格納されたリスト
+        ac_agents_list [list]           : 全ての空調エージェントの情報が格納されたリスト
+        per_time_dic [dict]             : 1分ごとのエージェント情報が格納された辞書
+        time [datetime]                 : 各ステップごとの時間
+        width [int]                     : 定義空間の幅（x軸方向）
+        height [int]                    : 定義空間の奥行き（y軸方向）
+        depth [int]                     : 定義空間の高さ（z軸方向）
+        space_x_min [int]               : 定義空間のx軸方向の最小値
+        space_x_max [int]               : 定義空間のx軸方向の最大値
+        space_y_min [int]               : 定義空間のy軸方向の最小値
+        space_y_max [int]               : 定義空間のy軸方向の最最大値
+        space_z_min [int]               : 定義空間のz軸方向の最小値
+        space_z_max [int]               : 定義空間のz軸方向の最大値
+        
     """    
-    def __init__(self,floor, simulation_step, init_bems_data, control_data, layout_data, source_data):
-        """ Model init method.
-
-        Args:
-            width (Int): The width of a space
-            height (Int): The height of a space
-            depth (Int): The depth of a space
-            floor (Int): Floor for simulation
-            simulation_step (Int): The number of simulation
-            init_ebms_data(object): Formatted init simulation data
-            control_data (object): Formatted control plan data
-            layout_data (object): Formatted layout data
-        """        
+    def __init__(self,floor, simulation_step, init_bems_data, control_data, layout_data, source_data,start_time,end_time):
+        
         self.current_id =  0
         self.running = True
         self.terminate = False
 
         self.layout_data = layout_data["layout"]
         self.source_data = source_data["data"]
-        
         self.ac_position = layout_data["ac"]
-
-        self.bems_data_num = 0
-        self.all_bems_data = init_bems_data["bems_data"]
-        self.init_bems_data = self.all_bems_data[self.bems_data_num]
-        self.bems_data_num += 1
+        self.init_ac_coordinate_arr = []
 
         self.floor = floor
         self.simulation_step = simulation_step
 
         self.control_data = control_data
         self.current_control_data = next(self.control_data)
-
-
-        # self.remove_agents_list = []
+        
+        self.all_bems_data = init_bems_data["bems_data"]
+        
         self.remove_agents_set = set()
+        
         self.spaces_agents_list = []
         self.heat_charge_agents_list = []
         self.ac_agents_list = []
+        
         self.per_time_dic = {}
-
-        self.time = datetime.strptime(self.init_bems_data["時間"].replace("/","-"), '%Y-%m-%d %H:%M:%S')
+        self.time = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
+        self.end_time = end_time
 
         self.source_data_info = -1
 
-        self._set_space_param()
+        self.__set_init_bems_data()
+        self.__set_init_layout()
 
-    def _set_ac_agent(self):
+    def __set_init_bems_data(self):
+        self.bems_data_num = 0
+        self.init_bems_data = self.all_bems_data[self.bems_data_num]
+        # self.bems_data_num += 1
+        
+    def __set_init_ac_agents(self):
+        """ 空調エージェントの配置を行うメソッド
+            init_bems_data内のデータを参照して配置
+            空調と同じ場所には空間エージェントも配置
+        """        
         for one in self.ac_position:
-            pos = (float(one["x"])+self.space_x_min,float(one["y"])+self.space_y_min,float(one["z"])+self.space_z_min)
+            # 空調の配置
+            pos = (float(one["x"]),float(one["y"]),float(one["z"]))
             agent = AirConditioner(self.next_id(),self,pos,one["id"],self.init_bems_data["{}吸込温度".format(one["id"])])
             self.schedule.add(agent)
             self.grid.place_agent(agent, pos)
+            # 空調と同じ場所には吸込用の空間を配置
+            agent = Space(self.next_id(),self,pos,self.init_bems_data["{}吸込温度".format(one["id"])])
+            self.schedule.add(agent)
+            self.grid.place_agent(agent, pos)
+            self.init_ac_coordinate_arr.append(pos)
+            
+    def __check_ac_postiion_overwrap(self,pos):
+        """ 空調の位置座標と被っているか確認するメソッド
+            空調初期位置決定用で用いる
 
-    def _general_set_agent_roop(self,pos,x_i,y_i,z_i,base_temp,base_ac_id):
-        if (z_i == self.space_z_min) or (z_i == self.space_z_max) or (x_i == self.space_x_min) or (x_i == self.space_x_max) or (y_i == self.space_y_min) or (y_i == self.space_y_max):
-            agent = HeatSource(self.next_id(),self,pos,base_temp,1,base_ac_id)
-        else:
-            agent = Space(self.next_id(),self,pos,base_temp)
-        self.schedule.add(agent)
-        self.grid.place_agent(agent, pos)
+        Args:
+            pos [tupple]: 位置座標の値
 
-    def _init_agents_position(self):
-        base_point = [value for value in self.layout_data if (value["x"] != self.space_x_min-2) and (value["y"] != self.space_y_min-2) and (value["x"] != self.space_x_max-4) and (value["y"] != self.space_y_max-4)][0]
-        if len(base_point) == 0:
-            x_condition = ""
-            y_condition = ""
-        else:
-            for value in self.layout_data:
-                if value["x"] == base_point["x"]:
-                    if value["y"] <= base_point["y"]:
-                        y_condition = "small"
+        Returns:
+            [bool]: True->被っている　False->被っていない
+        """        
+        for ac_pos in self.init_ac_coordinate_arr:
+            if (ac_pos[0] == pos[0]) and (ac_pos[1] == pos[1]) and (ac_pos[2] == ac_pos[2]):
+                return True
+        return False
+        
+    def __determine_agent_temp_from_ac(self,pos):
+        """ 現在の位置から最も近い空調を探索するメソッド
+            各エージェントの初期温度を吸込温度に合わせるために用いる
+
+        Args:
+            pos [tupple]: 位置座標のタプル
+
+        Returns:
+            base_temp  [float]: 最も近い空調の吸込温度
+            base_ac_id [int]  : 最も近い空調のID
+        """        
+        distance_arr = []
+        # 各空調からの距離を算出
+        for i in self.ac_agents_list:
+            distance_arr.append(self.grid.get_distance(i.pos,pos))
+                
+        # 距離が最小になる空調の温度とIDを取得
+        base_temp = self.ac_agents_list[distance_arr.index(min(distance_arr))].observe_temp
+        base_ac_id = self.ac_agents_list[distance_arr.index(min(distance_arr))].ac_id
+        
+        return base_temp, base_ac_id
+    
+    def __set_init_agent_place(self,kind,pos,temp,ac_id):
+        """ 単一のエージェントを配置するメソッド
+
+        Args:
+            kind [Int]  : エージェント種別
+            pos [tupple]: 位置座標のタプル
+            temp [float]: 温度
+            ac_id [int] : 最も近い空調ID
+        """        
+        agent = -1
+        # 空間エージェントの場合
+        if kind == HEAT_KIND_SPACE:
+            agent = Space(self.next_id(),self,pos,temp)
+        # 空間エージェント以外の場合
+        elif kind == HEAT_SOURCE_KIND_WINDOW or kind == HEAT_SOURCE_KIND_BARRIER or kind == HEAT_SOURCE_KIND_FLOOR or kind == HEAT_SOURCE_KIND_CEILING:
+            agent = HeatSource(self.next_id(),self,pos,temp,kind,ac_id)
+        # 配置可能エージェントの場合空間内に設定
+        if agent != -1:
+            self.schedule.add(agent)
+            self.grid.place_agent(agent, pos)
+            
+    def __check_heat_source_agent_exist(self,pos):
+        """ 現在の座標で熱源が存在するか調べるメソッド
+
+        Args:
+            pos [tupple]: 位置座標のタプル
+
+        Returns:
+              [bool]: 存在するかどうかのフラグ
+            i [int] : 存在すれば熱源のIDを返す。存在しなければ-1を返す
+        """        
+        x, y, z = pos
+        for i in range(len(self.source_data)):
+            if (self.source_data[i]["x"] == x) and (self.source_data[i]["y"] == y) and (self.source_data[i]["z"] == z):
+                return True, i
+            
+        return False, -1
+                
+    def __set_init_agents_position(self):
+        """ レイアウトを定義するメソッド
+        　　datasetクラスから渡されたレイアウト情報と熱源情報から各エージェントを配置
+          　レイアウト情報とは別の熱源情報から優先的にエージェントを配置
+            人や机やPCなどを優先的に配置していいく
+        """        
+        for z in range(self.depth):
+            for y in range(self.height):
+                for x in range(self.width):
+                    pos = (float(x),float(y),float(z))
+                    # 最も近い空調エージェントを基準
+                    temp, near_ac_id = self.__determine_agent_temp_from_ac(pos)
+                    # 熱源があるかを調べる
+                    heat_source_exist, heat_source_id = self.__check_heat_source_agent_exist(pos)
+                    if self.__check_ac_postiion_overwrap(pos):
+                        pass
+                    # 熱源の場合は熱源の配置
+                    elif heat_source_exist and heat_source_id != -1:
+                        heat_source = self.source_data[heat_source_id]
+                        self.__set_init_agent_place(self,HEAT_SOURCE_KIND_OTHERS,pos,heat_source["temp"])
+                    # それ以外の場合はレイアウト情報に合わせてエージェントの配置
                     else:
-                        y_condition = "big"
-                if value["y"] == base_point["y"]:
-                    if value["x"] <= base_point["x"]:
-                        x_condition = "big"
-                    else:
-                        x_condition = "small"
-            base_point["x"] += 3
-            base_point["y"] += 3
+                        agent_kind = self.layout_data[z][y][x]
+                        self.__set_init_agent_place(agent_kind,pos,temp,near_ac_id)
 
-        for x_i in range(self.space_x_min,self.space_x_max + 1):
-            for y_i in range(self.space_y_min,self.space_y_max + 1):
-                for z_i in range(self.space_z_min,self.space_z_max + 1):
-                    pos = (x_i,y_i,z_i)
-                    pos_format = (float(x_i),float(y_i),float(z_i))
-                    distance_arr = []
-                    for i in self.ac_agents_list:
-                        distance_arr.append(self.grid.get_distance(i.pos,pos_format))
-                    base_temp = self.ac_agents_list[distance_arr.index(min(distance_arr))].observe_temp
-                    base_ac_id = self.ac_agents_list[distance_arr.index(min(distance_arr))].ac_id
-                    source_temp = -1
-                    for i in range(len(self.source_data)):
-                        if (self.source_data[i]["x"] + self.space_x_min == x_i) and (self.source_data[i]["y"] + self.space_y_min == y_i) and (self.source_data[i]["z"] == z_i):
-                            source_temp = self.source_data[i]["temp"]
-                    if x_condition == "big" and y_condition == "big":
-                        if source_temp > 0:
-                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5,base_ac_id)
-                            self.schedule.add(agent)
-                            self.grid.place_agent(agent, pos)                            
-                        elif (x_i > base_point["x"] and y_i > base_point["y"]):
-                            if (x_i == base_point["x"] + 1) or (y_i == base_point["y"] + 1):
-                                if  z_i > 0 and z_i < 4:
-                                    agent = HeatSource(self.next_id(),self,pos,base_temp,1,base_ac_id)
-                                    self.schedule.add(agent)
-                                    self.grid.place_agent(agent, pos)
-                        else:
-                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp,base_ac_id)
-                    elif x_condition == "big" and y_condition == "small":
-                        if source_temp > 0:         
-                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5,base_ac_id)
-                            self.schedule.add(agent)
-                            self.grid.place_agent(agent, pos)                                        
-                        elif (x_i > base_point["x"] and y_i < base_point["y"]):
-                            if (x_i == base_point["x"] + 1) or (y_i == base_point["y"] - 1):
-                                if  z_i > 0 and z_i < 4:
-                                    agent = HeatSource(self.next_id(),self,pos,base_temp,1,base_ac_id)
-                                    self.schedule.add(agent)
-                                    self.grid.place_agent(agent, pos)
-                        else:
-                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp,base_ac_id)
-                    elif x_condition == "small" and y_condition == "big":
-                        if source_temp > 0:
-                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5, base_ac_id)
-                            self.schedule.add(agent)
-                            self.grid.place_agent(agent, pos)                                         
-                        elif (x_i < base_point["x"] and y_i > base_point["y"]):
-                            if (x_i == base_point["x"] - 1) or (y_i == base_point["y"] + 1):
-                                if  z_i > 0 and z_i < 4:
-                                    agent = HeatSource(self.next_id(),self,pos,base_temp,1,base_ac_id)
-                                    self.schedule.add(agent)
-                                    self.grid.place_agent(agent, pos)
-                        else:
-                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp,base_ac_id)
-                    elif x_condition == "small" and y_condition == "small":
-                        if source_temp > 0:          
-                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5,base_ac_id)
-                            self.schedule.add(agent)
-                            self.grid.place_agent(agent, pos)                                         
-                        elif (x_i < base_point["x"] and y_i < base_point["y"]):
-                            if (x_i == base_point["x"] - 1) or (y_i == base_point["y"] - 1):
-                                if  z_i > 0 and z_i < 4:
-                                    agent = HeatSource(self.next_id(),self,pos,base_temp,1,base_ac_id)
-                                    self.schedule.add(agent)
-                                    self.grid.place_agent(agent, pos)
-                        else:
-                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp,base_ac_id)
-                    else:
-                        if source_temp > 0:
-                            agent = HeatSource(self.next_id(), self, pos, source_temp, 5,base_ac_id)
-                            self.schedule.add(agent)
-                            self.grid.place_agent(agent, pos)                                
-                        else:                          
-                            self._general_set_agent_roop(pos,x_i,y_i,z_i,base_temp,base_ac_id)
+    def __set_init_layout(self):
+        """ シミュレーションの空間レイアウト初期値を設定するメソッド
+        　　渡されるデータは3次元の配列 [[[...],[...],...], [[...],[...],...],...]
+              　・1次元：z軸の値
+                ・2次元：y軸の値
+                ・3次元：x軸の値
+                
+            配列内の値がエージェントの種類を示す
+                ・0: エージェントは存在しない
+                ・1: 空間エージェント
+                ・2: 窓エージェント
+                ・3: 壁エージェント
+                ・4: 床エージェント
+                ・5: 天井エージェント
+            
+            デフォルトでは各軸の最小値は0に設定されており
+                ・zが大きくなる　→　鉛直方向に向かって高くなる
+                ・yが大きくなる　→　奥に向かって高くなる
+                ・xが大きくなる　→　横方向（右側）に向かって大きくなる
+            
+                ex) (0,0,0)は床側の左下の位置を表す。
+        """
+        
+        # 最小値はデフォルトで0
+        self.space_x_min = 0
+        self.space_y_min = 0
+        self.space_z_min = 0
+        
+        # レイアウト情報の最大値で設定
+        self.width  = len(self.layout_data[0][0])
+        self.height = len(self.layout_data[0])
+        self.depth  = len(self.layout_data)
+        
+        # 配列の添字用で最大値を設定
+        self.space_x_max = self.width  - 1
+        self.space_y_max = self.height - 1
+        self.space_z_max = self.depth  - 1
+        
+        # エージェントモデル空間の設定
+        self.grid = ContinuousSpace3d(
+            self.space_x_max, self.space_y_max, self.space_z_max, False, 
+            self.space_x_min, self.space_y_min, self.space_z_min
+        )
 
-    def _set_space_param(self):
-        grid_points = self.layout_data
-        x_arr = []
-        y_arr = []
-        for value in grid_points:
-            x_arr.append(value["x"])
-            y_arr.append(value["y"])
-        min_x,max_x = min(x_arr),max(x_arr)
-        min_y,max_y = min(y_arr),max(y_arr)
-        min_z,max_z = 0,4
-
-        self.grid = ContinuousSpace3d(max_x + 6, max_y + 6, max_z, False, min_x, min_y, min_z)
-        self.space_x_min = min_x + 2
-        self.space_y_min = min_y + 2
-        self.space_z_min = min_z
-        self.space_x_max = max_x + 4
-        self.space_y_max = max_y + 4
-        self.space_z_max = max_z
-        self.width = self.space_x_max - self.space_x_min
-        self.height = self.space_y_max - self.space_y_min
-        self.depth = self.space_z_max - self.space_z_min
-
+        # エージェント行動情報の設定
         self.schedule = SimultaneousActivation(self)
 
-        self._set_ac_agent()
-        self._init_agents_position()
+        # 空調エージェントの配置
+        self.__set_init_ac_agents()
+        # 空調以外の全エージェントの配置
+        self.__set_init_agents_position()
 
     def next_control_data(self):
+        """ 次の時間の空調制御計画を設定するメソッド
+        """        
         try:
             self.current_control_data = next(self.control_data)
         except StopIteration:
             self.terminate = True
 
     def _reset_heat_source_temp(self):
+        """ 熱源情報を更新するメソッド
+            自身から最小距離になる空調エージェントの吸込温度に設定
+        """
+        # 熱源エージェントだけ取得
         for agent in self.grid._index_to_agent.values():
             if agent.__class__.__name__ =="HeatSource":
                 x_i,y_i,z_i = agent.pos
@@ -696,14 +897,21 @@ class HeatModel(Model):
                 agent.temp = self.init_bems_data["{}吸込温度".format(base_id)]
 
     def check_next_bems_data(self):
-        if len(self.all_bems_data) > self.bems_data_num:
-            cmp_time = datetime.strptime(self.all_bems_data[self.bems_data_num]["時間"].replace("/","-"), '%Y-%m-%d %H:%M:%S')
+        """ 次のBEMSデータが存在するかチェックするメソッド
+        """       
+
+        if (len(self.all_bems_data) > self.bems_data_num) and (self.bems_data_num % RESET_BEMS_DATA_SPAN == 0) and (self.bems_data_num != 0):
+            cmp_time = self.all_bems_data[self.bems_data_num]["時間"]    
             if self.time == cmp_time:
                 self.init_bems_data = self.all_bems_data[self.bems_data_num]
+                print(self.init_bems_data,cmp_time)
                 self._reset_heat_source_temp()
-                self.bems_data_num += 1
+        self.bems_data_num += 1
 
     def remove_agents(self):
+        """ 削除対象に選ばれたエージェントを一括削除を行うメソッド
+            1分ごとに実行される
+        """
         remove_list = []
         for one in self.grid._index_to_agent.values():
             if one.unique_id in list(self.remove_agents_set):
@@ -716,16 +924,19 @@ class HeatModel(Model):
         self.remove_agents_set = set()
 
     def print_state(self):
+        """ 現在のシミュレーション時間を出力するメソッド
+        """        
         print("時間：{}".format(self.time))
 
     def step(self):
+        """ エージェントモデル全体の1ステップを定義したメソッド
+        """
         if not self.terminate:
-            self.check_next_bems_data()
             self.per_time_dic["timestamp"] = self.time.strftime('%Y-%m-%d %H:%M:%S')
-            # self.per_time_dic["timestamp"] = self.time
             self.per_time_dic["agent_list"] = []
             self.schedule.step()
             if self.time.second == 0:
+                self.check_next_bems_data()
                 self.next_control_data()
                 self.spaces_agents_list.append(self.per_time_dic)
                 # print(len(self.per_time_dic))

@@ -5,17 +5,16 @@
 
 
 
-# ライブラリ
-import datetime
+# python lib
 import numpy as np
 import matplotlib.pyplot as plt
-from controllers.sml.model import *
-from controllers.sml.extension.visualization.canvas_grid_visualization_extension import CanvasGrid_3d
 from tqdm import tqdm
-import json
-import math
 import time
 import multiprocessing as mp
+
+# utils
+from controllers.sml.model import *
+from controllers.sml.extension.visualization.canvas_grid_visualization_extension import CanvasGrid_3d
 from controllers.sml.inc.define import *
 
 
@@ -30,14 +29,24 @@ class SimulationControl():
             output_folder       [str] : 出力先フォルダ名
     """    
 
-    def __init__(self,post_data):
-        self.simulation_step = int(post_data["simulation_step"]) * 60
+    def __init__(self,post_data,dataclass):
+        self.simulation_step = int(post_data["simulation_step"])
         self.models_floor_dic = {}
         self.dataset = post_data["simulation_data"]
         self.output_folder = post_data["output_folder"]
+        self.dataclass = dataclass
 
         for data in self.dataset:
-            model = HeatModel(data["init_bems_data"]["floor"], self.simulation_step, data["init_bems_data"], data["control_data"],data["layout_data"],data["source_data"])
+            model = HeatModel(
+                data["init_bems_data"]["floor"], 
+                self.simulation_step, 
+                data["init_bems_data"], 
+                data["control_data"],
+                data["layout_data"],
+                data["source_data"],
+                self.dataclass.simulation_start_time,
+                self.dataclass.simulation_end_time
+            )
             self.models_floor_dic[data["init_bems_data"]["floor"]] = model
 
 
@@ -51,17 +60,6 @@ class SimulationControl():
         print("Simulation Calculation Steps: {}".format(self.simulation_step))
         time.sleep(0.1)
         print("Simulation Results Folder: {}".format(self.output_folder))
-        
-        
-
-    # def output_agent_json(self):
-    #     """
-    #     """        
-    #     for result in self.output_data:
-    #         print('{0}/result{1}.json'.format(self.output_folder,result[0]))
-    #         fw = open('{0}/result{1}.json'.format(self.output_folder,result[0]),'w')
-    #         json.dump(result[1],fw,indent=4)
-            
             
 
     def run_simulation(self,key,model,i):
@@ -100,12 +98,15 @@ class SimulationControl():
         self._str_simulation_state()
         result_arr = []
         for key,model in self.models_floor_dic.items():
-            for i in tqdm(range(self.simulation_step)):
+            for i in tqdm(range(self.simulation_step+1)):
                 if model.terminate:
                     break
                 else:
                     model.step()
-            result_arr.append((key,model.spaces_agents_list))
+                    if (self.dataclass.bach == False) and (i%60 == 0):
+                        self.dataclass.per_output_data(key,model.spaces_agents_list[-1],i)
+            if self.dataclass.bach == True:
+                result_arr.append((key,model.spaces_agents_list))
         elapsed_time = time.time() - start
         print("Simulation finished!")
         print("Simulation time:{}".format(int(elapsed_time)) + "[sec]")

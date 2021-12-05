@@ -227,7 +227,7 @@ class ContinuousSpace3d:
         """ Check if a point is out of bounds. """
 
         x, y, z = pos
-        return x < self.x_min or x >= self.x_max or y < self.y_min or y >= self.y_max or z < self.z_min or z > self.z_max
+        return x < self.x_min or x > self.x_max or y < self.y_min or y > self.y_max or z < self.z_min or z > self.z_max
 
     def get_cell_list_contents( self, cell_list: Iterable[FloatCoordinate_3d]) -> List[GridContent_3d]:
         """

@@ -3,15 +3,17 @@
 """ シミュレーション実行モジュール
 
 Todo:
-    * /Thermal Agent Simulation/config/config.iniにシミュレーション設定ファイルを記載しないと実行されない
+    * ./config/config.iniにシミュレーション設定ファイルを記載しないと実行されない
+    * ./controllers/env.pyに変更があれば実行環境の設定を記載
 """
 
-# ライブラリ
-from controllers.sml.simulation import SimulationControl
-from controllers.cvt.conversion import *
-import time
+# python lib
 import configparser
 import multiprocessing as mp
+
+# utils
+from controllers.sml.simulation import SimulationControl
+from controllers.cvt.conversion import *
 
 # 設定ファイルの内容を取得
 config_ini = configparser.ConfigParser()
@@ -21,32 +23,21 @@ config_bems       = config_ini["BEMS"]
 config_control    = config_ini["CONTROL"]
 config_simulation = config_ini["SIMULATION"]
 config_layout     = config_ini["LAYOUT"]
-config_mp         = config_ini["CALCULATION"]
-
-# pandasで扱うデータの文字コードの指定
-# uni_code_set = "utf-8-sig"
-uni_code_set = "shift-jis"
-
-
 
 # DataSetクラスからインスタンスの生成(cvt内のファイルから参照)
-dataset = DataSet(config_bems, config_control, config_layout, config_simulation, config_mp,uni_code_set)
+dataset = DataSet(config_bems, config_control, config_layout, config_simulation)
 # 必要ファイルのデータ統合
 simulation_setting_data = dataset.integrate_files()
 
-# SimulationControlからインスタンスの生成
-simulation = SimulationControl(simulation_setting_data)
+simulation = SimulationControl(simulation_setting_data,dataset)
 
-# マルチプロセス処理がTrueの場合
-if dataset.mp_flag:
+# マルチプロセス処理で実行
+if dataset.mp == True:
     if __name__ == '__main__':
         mp.freeze_support()
-        # シミュレーションをマルチプロセス処理
         result = simulation.run_all_simulations_multi_process()
-        # 計算結果をJsonファイルで出力
         dataset.output_data(result)
-# マルチプロセス処理がFalseの場合
-else:
-    # シミュレーションを単一プロセスで処理
+# 逐次処理で実行
+elif dataset.mp == False:
     result = simulation.run_all_simulations()
     dataset.output_data(result)
