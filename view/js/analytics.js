@@ -6,19 +6,24 @@ async function import_floors(val){
     return await eel.render_floors(val)();
 }
 
-function render_heatmap() {
-    const mapHeight = 8;
-    const mapWidth = 16;
-    const maxVal = 741; 
+function render_graphes(result){
 
-    var datalist = (function(){
-        const dlist = []
-        for(let i=0;i<mapHeight * mapWidth;i++){
-            dlist.push(Math.random())
-        }
-        return dlist
-    })()
-    console.log(datalist);
+}
+
+async function render_heatmap(result) {
+    console.log(result);
+    const mapHeight = result["max_width"];
+    const mapWidth = result["max_height"];
+    const maxVal = mapHeight * mapWidth; 
+
+    // var datalist = (function(){
+    //     const dlist = []
+    //     for(let i=0;i<mapHeight * mapWidth;i++){
+    //         dlist.push(Math.random())
+    //     }
+    //     return dlist
+    // })()
+    var datalist = result["data"];
     
     const generateDatasets = function(){
         const datasets = []
@@ -100,6 +105,7 @@ function render_heatmap() {
         },
     }
 });
+render_graphes(result);
 }
 document.addEventListener('DOMContentLoaded', function() {
     var elems = document.querySelectorAll('.dropdown-trigger');
@@ -149,15 +155,13 @@ function post_result(){
         alert("結果フォルダを選択してください")
     } else{
         $('.all-loading-screen').show();
-        setTimeout(function(){
-            var dir = $('#input-select').val();
-            var file = $('#floor-select').val();
-            var path = 'out/' + dir + '/' + file;
-            import_result_data(path).then(function (result) {
-                console.log(result);
+        var dir = $('#input-select').val();
+        var file = $('#floor-select').val();
+        var path = 'out/' + dir + '/' + file;
+        import_result_data(path).then(function (result) {
+            render_heatmap(result).then(function (value){
+                $('.all-loading-screen').hide();
             });
-            $('.all-loading-screen').hide();
-            render_heatmap();
-        },3000);
+        });
     }
 }

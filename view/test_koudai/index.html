@@ -7,10 +7,7 @@
     <!-- Library import -->
     <link rel="stylesheet" href="materialize/css/materialize.css">
     <link rel="stylesheet" href="css/index.css">
-    <link rel="stylesheet" href="css/confirm.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css'>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
     <script type="text/javascript" src="/eel.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 </head>
@@ -41,64 +38,57 @@
       </ul>
     </nav>
 
-  <div class="all-loading-screen">
-    <div class="sk-screen">
-      <div class="sk-circle">
-        <div class="sk-circle1 sk-child"></div>
-        <div class="sk-circle2 sk-child"></div>
-        <div class="sk-circle3 sk-child"></div>
-        <div class="sk-circle4 sk-child"></div>
-        <div class="sk-circle5 sk-child"></div>
-        <div class="sk-circle6 sk-child"></div>
-        <div class="sk-circle7 sk-child"></div>
-        <div class="sk-circle8 sk-child"></div>
-        <div class="sk-circle9 sk-child"></div>
-        <div class="sk-circle10 sk-child"></div>
-        <div class="sk-circle11 sk-child"></div>
-        <div class="sk-circle12 sk-child"></div>
-      </div>
-    </div>
-    <div class="loading-text">Loading</div>
-  </div>
-        
-    <div class="message-start">シミュレーションを開始します</div>
-    <div class="message-stop">シミュレーションを終了します</div>
+    <div class="message">保存しました</div>
+    <button onclick="simulation();">aiueo</button>
   <!-- コンテンツ-->
   <div id="content" style="padding-top:5%;">
     <div id="title">
-        <h5 id="title-text" class="left-align">結果確認</h5>
+        <h5 id="title-text" class="left-align">Thermal Environment Simulator</h5>
     </div>
-    <!-- 結果読みこみファイル選択フォーム-->
-    <div id="result-form" class="console" style="background-color: white; height: 400px;margin-left: 100px;margin-right: 100px;margin-top: 100px;">
-      <div class="row">
-        <div class="input-field col s12">
-          <h6>結果フォルダの選択</h6>
-          <select id="input-select" style="display:block;">
-            <option value="nothing">選択してください</option>
-          </select>
+    <!-- フォーム-->
+    <div id="input-form">
+       <div class="row">
+        <div class="col s12">
+          <div class="row">
+            <div class="input-field col s5">
+                <input type="text" id="autocomplete-input" class="autocomplete">
+                <label for="autocomplete-input">シミュレーション回数（分）</label>
+            </div>
+            <div class="input-field col s5 offset-s1">
+                <input type="text" id="autocomplete-input" class="autocomplete">
+                <label for="autocomplete-input">出力先フォルダ名</label>
+            </div>
+            <div class="input-field col s5">
+                <input type="text" id="autocomplete-input" class="autocomplete">
+                <label for="autocomplete-input">BEMSファイル名</label>
+            </div>
+            <div class="input-field col s5 offset-s1">
+                <input type="text" id="autocomplete-input" class="autocomplete">
+                <label for="autocomplete-input">制御計画フォルダ名</label>
+            </div>
+            <div class="input-field col s5">
+                <input type="text" id="autocomplete-input" class="autocomplete">
+                <label for="autocomplete-input">熱源情報フォルダ名</label>
+            </div>
+            <div class="input-field col s5 offset-s1">
+                <input type="text" id="autocomplete-input" class="autocomplete">
+                <label for="autocomplete-input">レイアウト情報フォルダ名</label>
+            </div>               
+            <div class="input-field col s12 input-last">
+              <div class="input-field col s5">
+                <select>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+                <label>マルチプロセス計算</label>
+              </div>
+              <div class="config-save">
+                <a id="config-save-button" onclick="saveConfigure();" style="font-size:24px;"class="waves-effect waves-light btn col s5 offset-s1">保存</a>
+            </div>    
+            </div>                                                                
+          </div>
         </div>
-      </div>
-      <div class="row">
-        <div class="input-field col s12">
-          <h6>フロアの選択</h6>
-          <select id="floor-select" style="display:block;" disabled>
-            <option value="nothing">結果フォルダを選択してください</option>
-          </select>
-        </div>
-      </div>
-      <a id="control-button-start" onclick="post_result();" class="waves-effect waves-light btn-large">読み込み</a>
-    </div>
-    <div id="title">
-      <h6 id="title-text" class="left-align">ヒートマップ</h6>
-    </div>
-    <div class="row">
-      <div id="heatmap" class="col s6 heatmap-box">
-        あいうえおかきくえっこ
-        <canvas id="heatMap" class="heatmap-canvas"></canvas>
-      </div>
-      <div id="heatmap-graphes" class="col s6 heatmap-graphes">
-        さしすせそたちつてと
-      </div>
+       </div>
     </div>
   </div>
 
@@ -130,8 +120,8 @@
           </div>
         </footer>
   </div>
-</div>
-<script type="text/javascript" src="js/confirm.js"></script>
+    </div>
+<script type="text/javascript" src="js/index.js"></script>
 <script src="materialize/js/materialize.js"></script>
 </body>
 </html>
