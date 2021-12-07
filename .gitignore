@@ -10,7 +10,7 @@ config/
 artisoc/
 .ipynb_checkpoints/
 out/
-data/
+# data/
 # *.json
 # *.csv
 
