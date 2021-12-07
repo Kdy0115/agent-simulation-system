@@ -78,9 +78,14 @@ class Space(Agent):
         # 鉛直上の空間エージェントを見て温度が小さければ鉛直上方向に自然対流熱荷を放出する。
         if self.neighbors_upper_space_agent != None:
             if self.neighbors_upper_space_agent.temp <= self.temp:
-                space_heat_charge = SpaceHeatCharge(self.model.next_id(),self.model,self)
-                self.model.schedule.add(space_heat_charge)
-                self.model.grid.place_agent(space_heat_charge, self.pos)
+                heat = abs(self.temp - self.neighbors_upper_space_agent.temp) * N_BETA
+                self.energy -= heat
+                self.neighbors_upper_space_agent.energy += heat
+                self.temp -= heat/self.capacity
+                self.neighbors_upper_space_agent.temp += heat/self.neighbors_upper_space_agent.capacity
+                # space_heat_charge = SpaceHeatCharge(self.model.next_id(),self.model,self)
+                # self.model.schedule.add(space_heat_charge)
+                # self.model.grid.place_agent(space_heat_charge, self.pos)
             
     def exchange_heat(self):
         """ 隣接する空間と熱交換を行うメソッド
@@ -261,11 +266,6 @@ class HeatSource(Agent):
         if self.kind != HEAT_SOURCE_KIND_OTHERS:
             self.temp = self.model.init_bems_data["{}吸込温度".format(self.base_ac_id)]
             self.energy = self.temp * self.capacity
-            # if self.base_ac_id == "5f6" or self.base_ac_id == "5f7" or self.base_ac_id == "5f8":
-            #     print("------------------------------------")
-            #     print(self.model.time)
-            #     print(self.base_ac_id)
-            #     print(self.temp,self.model.init_bems_data["{}吸込温度".format(self.base_ac_id)])
 
     def step(self):
         if ((self.model.time.second == 0)) and ((self.model.time.minute == 0) or (self.model.time.minute == 30)):
@@ -748,6 +748,7 @@ class HeatModel(Model):
             base_ac_id [int]  : 最も近い空調のID
         """        
         distance_arr = []
+
         # 各空調からの距離を算出
         for i in self.ac_agents_list:
             distance_arr.append(self.grid.get_distance(i.pos,pos))
@@ -755,6 +756,7 @@ class HeatModel(Model):
         # 距離が最小になる空調の温度とIDを取得
         base_temp = self.ac_agents_list[distance_arr.index(min(distance_arr))].observe_temp
         base_ac_id = self.ac_agents_list[distance_arr.index(min(distance_arr))].ac_id
+        
         
         return base_temp, base_ac_id
     

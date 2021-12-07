@@ -21,15 +21,46 @@ sys.path.append(os.getcwd())
 from controllers import error,env,functions
 
 
+
 # 読み込むローデータファイルパス
-import_dir_path = "data/src/温度取り/温度とり2021年9月/温度とり2021年9月/"
+import_dir_path = "data/src/温度取り/温度とり2021年8月/"
 # 出力先ファイルパス
 output_dir_path = "data/evaluation/observe/all/"
 # 出力用ファイル名
-output_file_name = "observe1.csv"
+output_file_name = "observe.csv"
 
 # 時間カラム名
 time_colummn_name = "date"
+# 省くカラム名のリスト
+exclude_words = ["ch","@"]
+# ファイルグループ数
+file_group_num = 4
+
+
+
+def extract_required_columns(df):
+    """ 必要なカラム名だけを抽出する
+
+    Args:
+        df [DataFrame]: 抽出したいカラムが入ったDataFrame
+
+    Returns:
+        new_columns [list]: 抽出したカラムを返す
+    """    
+    
+    new_columns = []
+    for i in df.columns:
+        for j in exclude_words:
+            in_word = False
+            if j in i:
+                in_word = True
+                break
+        if in_word == False:
+            new_columns.append(i)
+    
+    return new_columns
+
+
 
 def to_datetime_format(df):
     """ 読み込んだDataFrameの時間型を標準型に変換する関数
@@ -39,12 +70,18 @@ def to_datetime_format(df):
         df [DataFrame]: 変換を行ったDataFrame型のデータ
     """ 
     
+    if "Date/Time" in df.columns:
+        df = df.rename(columns={'Date/Time': 'date'})
+    
+    new_columns = extract_required_columns(df)
+
     if time_colummn_name in df.columns:
         time_arr = []
         for i in range(len(df)):
             # print(df.iloc[i]["date"].replace("/","-").replace("'",":")[:-3])
             time_arr.append(dt.strptime(df.iloc[i][time_colummn_name].replace("/","-").replace("'",":")[:-3], '%Y-%m-%d %H:%M'))
         df[time_colummn_name] = time_arr
+        df = df[new_columns]
 
         return df
     else:
@@ -66,6 +103,7 @@ def merge_rows(df_arr: list,start: int,end: int):
     Returns:
         result_df_arr [DataFrame]: マージしたDataFrame
     """    
+    
     result_df_arr = pd.merge(df_arr[start],df_arr[start+1],on="date")
     for i in range(start+2,end):
         result_df_arr = pd.merge(result_df_arr,df_arr[i],on="date")
@@ -93,24 +131,34 @@ def add_rows_data(df,df1):
             return pd.concat([df.iloc[:i],df1])
         
 
+
 df_arr = []
 files = glob.glob("{}*.csv".format(import_dir_path))
 for i in files:
-    df_arr.append(pd.read_csv(i,encoding="shift-jis"))
+    try:
+        df = pd.read_csv(i,encoding="shift-jis",header=2)
+    except UnicodeDecodeError:
+        df = pd.read_csv(i,encoding="utf-8",header=2)
+    df = df.drop(df.index[[0]])
+    df_arr.append(df)
 
 for i in range(len(df_arr)):
-    to_datetime_format(df_arr[i])
-    
+    df_arr[i] = to_datetime_format(df_arr[i])
+
+
 edit_df_arr = []
 for i in range(3):
-    edit_df_arr.append(merge_rows(df_arr,4*i,4*(i+1)))
+    edit_df_arr.append(merge_rows(df_arr,file_group_num*i,file_group_num*(i+1)))
     
 for i in range(len(edit_df_arr)):
-    if i == 0:
-        result_df = add_rows_data(edit_df_arr[0],edit_df_arr[1])
-        i += 1
+    if len(edit_df_arr) <= 1:
+        result_df = edit_df_arr[0]
     else:
-        result_df = add_rows_data(result_df,edit_df_arr[i])
+        if i == 0:
+            result_df = add_rows_data(edit_df_arr[0],edit_df_arr[1])
+            i += 1
+        else:
+            result_df = add_rows_data(result_df,edit_df_arr[i])
         
 print_message =  """全てのファイルをマージしました。
 データカラム

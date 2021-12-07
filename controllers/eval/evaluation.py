@@ -12,23 +12,40 @@ import os
 import matplotlib.pyplot as plt
 import json
 import matplotlib.ticker as ticker
+import sys
 
+sys.path.append(os.getcwd())
+
+# utils
+from controllers import error,env,functions
 
 
 # 出力先フォルダパス
-output_dir_path = "eval/result_2021_08_22_natural_convection/"
-# 読み込む結果ファイル
-out_file_path = 'out/result_2021_08_22_natural_convection/cmp/result5.csv'
+output_dir_path = "eval/result_2021_11_22/"
+# シミュレーション結果フォルダ
+out_simulation_result_dir = "out/result_2021_11_22/"
+# 吸い込み評価用ファイルパス
+base_file_inhalt_path = "data/config_data/2021_11_20_26/base/all_bems_data5.csv"
+
+# 温度取りデータ評価用ファイル
+observe_file_path = "data/config_data/observe/all/observe2.csv"
+# 温度取りデータ位置座標ファイルパス
+position_data = "data/config_data/observe/position.json"
+
+# 読み込む吸い込み用シミュレーション結果ファイル
+out_file_path = '{}cmp/result5.csv'.format(out_simulation_result_dir)
+# 読み込む温度取り用シミュレーション結果ファイル
+simulation_data = "{}/result5.json".format(out_simulation_result_dir)
 
 # 温度取りデータ比較フラグ
 observe_evaluation = True
-# 温度取りデータ評価用ファイル
-observe_file_path = "data/evaluation/observe/all/observe1.csv"
-# 温度取りデータ位置座標ファイルパス
-position_data = "data/evaluation/observe/position.json"
-# 温度取り評価用結果データ
-simulation_data = "out/result_2021_08_22_natural_convection/result5.json"
+# グラフ出力フラグ
+graph_output       = True
 
+
+# 同一日時の場合は現在の時間を設定する
+now_time = dt.now()
+output_dir_path += f"{now_time.year}_{now_time.month}_{now_time.day}_{now_time.hour}_{now_time.minute}/"
 
 
 def rename_columns(df):
@@ -110,15 +127,14 @@ def create_graphes(df,columns,floor,setting_columns,output_dir):
 
     plt.subplots_adjust(wspace=0.2, hspace=0.3)
 
-    dir_path = output_dir+"inhalation/"
-    os.makedirs(dir_path,exist_ok=True)
-    output_file_path = "{0}{1}f_result{2}_{3}_{4}_{5}_{6}.png".format(dir_path,floor,dt.now().year,dt.now().month,dt.now().day,dt.now().hour,dt.now().minute)
+    os.makedirs(output_dir,exist_ok=True)
+    output_file_path = "{0}{1}f_result.png".format(output_dir,floor)
     
     fig.savefig(output_file_path)
 
 
 
-def inhalation_temp_evaluation(out_file_path,output_dir):
+def inhalation_temp_evaluation(out_file_path,output_dir,base_file_path):
     """ 吸込温度側評価用関数
 
     Args:
@@ -134,8 +150,8 @@ def inhalation_temp_evaluation(out_file_path,output_dir):
     dt_time = dt.strptime(time, '%Y-%m-%d %H:%M:%S')
 
     # base_dir = "data/evaluation/base/{0}_{1}_{2}/".format(dt_time.year,dt_time.month,dt_time.day)
-    base_dir = "data/sample_data2/base/"
-    base_file_path = base_dir + "all_bems_data{}.csv".format(floor)
+    # base_dir = "data/sample_data2/base/"
+    base_file_path = base_file_path
 
     df_base = pd.read_csv(base_file_path,encoding="shift-jis")
     df_result.columns,extract_columns,setting_columns = rename_columns(df_base)
@@ -145,7 +161,11 @@ def inhalation_temp_evaluation(out_file_path,output_dir):
     except ValueError:
         df_merge["外気温"] = 0
 
-    create_graphes(df_merge,extract_columns,floor,setting_columns,output_dir)
+    output_dir += "inhalation/"
+    if graph_output:
+        create_graphes(df_merge,extract_columns,floor,setting_columns,output_dir)
+        
+    df_merge.to_csv(output_dir+"result.csv",encoding=env.glbal_set_encoding)
     
 
 
@@ -224,34 +244,34 @@ def observe_temp_evaluation(observe_data,simulation_data,position_data,output_di
                     observe_space_id_arr.append((sensor_id,agent["id"]))
                     
                     
-                    
     columns = [str(i[0])+"_予測値" for i in observe_space_id_arr]
     columns.append("時間")
     result_df = pd.DataFrame(data=[],columns=columns)
     
+    base_columns = list(result_df.columns)
     for per_time_data in json_load:
         time = per_time_data["timestamp"]
-        row = []
+        row = [0] * len(base_columns)
         for agent in per_time_data["agent_list"]:
             for space in observe_space_id_arr:
                 if agent["id"] == space[1]:
-                    row.append(agent["temp"])
-        row.append(time)
+                    row[base_columns.index("{}_予測値".format(space[0]))] = agent["temp"]
+        row[-1] = time
         result_df.loc[len(result_df)] = row
         
     df_merge = pd.merge(result_df,df_observe,on="時間",how="left")
-    
-    year,month,day = dt.now().year,dt.now().month,dt.now().day
-    hour,minute    = dt.now().hour,dt.now().minute
-    dir_path = "{0}/observe/result{1}{2}{3}{4}{5}/".format(output_dir,year,month,day,hour,minute)
+    dir_path = output_dir + "observe/"
     os.makedirs(dir_path,exist_ok=True)
     
-    for column in observe_space_id_arr:
-        create_observe_graphe(df_merge,column[0],dir_path)
+    if graph_output:
+        for column in observe_space_id_arr:
+            create_observe_graphe(df_merge,column[0],dir_path)
+        
+    df_merge.to_csv(dir_path+"result.csv",encoding=env.glbal_set_encoding)
         
 
 
-def main(out_file,observe_file,simulation_file,position,observe_flag,output_dir):
+def main(out_file,observe_file,simulation_file,position,observe_flag,output_dir,base_file_path):
     """ メイン関数
 
     Args:
@@ -263,11 +283,11 @@ def main(out_file,observe_file,simulation_file,position,observe_flag,output_dir)
         output_dir [str]        : 出力先フォルダパス
     """    
     # 吸込温度側評価
-    inhalation_temp_evaluation(out_file,output_dir)
+    inhalation_temp_evaluation(out_file,output_dir,base_file_path)
     # 温度取りデータ評価
     if observe_flag:
         observe_temp_evaluation(observe_file,simulation_file,position,output_dir)
 
 
 
-main(out_file_path,observe_file_path,simulation_data,position_data,observe_evaluation,output_dir_path)
+main(out_file_path,observe_file_path,simulation_data,position_data,observe_evaluation,output_dir_path,base_file_inhalt_path)
