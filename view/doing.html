@@ -84,10 +84,16 @@
             <h3>高さを選択</h3>
             <input type="radio" name="height" value="ceiling">天井
             <input type="radio" name="height" value="person_height">人の高さ
-            <input type="radio" name="height" value="floor">床
+            <input type="radio" name="height" value="floor">床<br>
 
+            <h3>座標を選択</h3>
+            <input type="number" id="graph_x" maxlength="3" value="" placeholder="３から３０まで"><br>
+            <input type="number" id="graph_y" maxlength="3" value="" placeholder="３から９まで"><br>
+            <input type="number" id="graph_z" maxlength="3" value="" placeholder="１から３まで"><br>
+
+            <button type='button' id="print_graph" onclick="print_graph();">グラフを表示</button>
             <h2>グラフ</h2>
-            <canvas id="stage"></canvas>
+            <canvas id="graph"></canvas>
 
 
         </div>
@@ -95,8 +101,11 @@
         
 
     </div>
-<script type="text/javascript" src="js/doing.js"></script>
+
 <script src="js/heatmap.min.js"></script>
+<script type="text/javascript" src="js/doing.js"></script>
+<!--
 <script type="text/javascript" src="js/test_heatmap.js"></script>
+-->
 </body>
 </html>
