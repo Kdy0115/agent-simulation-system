@@ -1,3 +1,4 @@
+#!python3.5
 import eel
 import configparser
 import subprocess
@@ -6,10 +7,23 @@ import sys
 import os
 import json
 import glob
+
+import numpy as np
+import seaborn as sns
+
+
+
 # ユーザー定義ファイル
 # import main
 
 eel.init('view',allowed_extensions=['.js','.html','.css'])
+
+
+@eel.expose
+def test():
+    print('接続済み')
+
+
 
 @eel.expose
 def on_button_clicked():
@@ -19,38 +33,52 @@ def on_button_clicked():
 @eel.expose
 def config_import():
     config_ini = configparser.ConfigParser()
-    config_ini.read('config/config.ini', encoding='utf-8')
+    config_ini.read('config/config_test.ini', encoding='utf-8')
 
     config_bems       = config_ini["BEMS"]
     config_control    = config_ini["CONTROL"]
     config_simulation = config_ini["SIMULATION"]
     config_layout     = config_ini["LAYOUT"]
-    config_calc       = config_ini["CALCULATION"]
-    return config_simulation["Simulation_time"], config_simulation["Output_folder_path"], config_bems["BEMS_file_path"], config_control["Control_file_path"], config_layout["Heat_source_file_path"], config_layout["Lyaout_floor_file_path"], config_calc["multiprocess"]
+    
+
+
+    return config_simulation["start_time"], config_simulation['end_time'], config_bems['bems_folder_path'], config_control['control_folder_path'], config_layout['layout_input_folder_path0'], config_layout['skeleton_layout_input_folder_path0'], config_layout['hot_position_folder_path0'], config_simulation['output_folder_path']
+
 
 @eel.expose
-def configure_save(simulation_step,out_folder,bems_file,control_folder,source_folder,layout_folder,mp):
+def configure_save(start_time,end_time,bems_folder_path,control_folder_path,layout_input_folder_path0,skeleton_layout_input_folder_path0,hot_position_folder_path0,output_folder_path):
     config_ini = configparser.ConfigParser()
-    config_ini.read('config/config.ini', encoding='utf-8')
-    config_ini["SIMULATION"]["Simulation_time"] = simulation_step
-    config_ini["SIMULATION"]["output_folder_path"] = out_folder
-    config_ini["BEMS"]["bems_file_path"] = bems_file
-    config_ini["CONTROL"]["control_file_path"] = control_folder
-    config_ini["LAYOUT"]["heat_source_file_path"] = source_folder
-    config_ini["LAYOUT"]["lyaout_floor_file_path"] = layout_folder
-    if mp == "Yes":
-        config_ini["CALCULATION"]["multiprocess"] = "True"
-    else:
-        config_ini["CALCULATION"]["multiprocess"] = "False"
-    print("Save Configuration")
-    with open('config/config.ini', 'w',encoding="utf-8") as configfile:
+    config_ini.read('config/config_test.ini', encoding='utf-8')
+
+    config_ini["SIMULATION"]["start_time"] = start_time
+    config_ini["SIMULATION"]["end_time"] = end_time
+    #print(type('output_folder_path'))
+    #print(bems_folder_path)
+    config_ini["SIMULATION"]["output_folder_path"] = output_folder_path
+    config_ini["BEMS"]["bems_folder_path"] = bems_folder_path
+    config_ini["CONTROL"]["control_folder_path"] = control_folder_path
+    config_ini["LAYOUT"]["hot_position_folder_path0"] = hot_position_folder_path0
+    config_ini["LAYOUT"]["layout_input_folder_path0"] = layout_input_folder_path0
+    config_ini["LAYOUT"]["skeleton_layout_input_folder_path0"] = skeleton_layout_input_folder_path0
+    config_ini["CALCULATION"]["multiprocess"] = 'False'
+
+    with open('config/config_test.ini', 'w',encoding="utf-8") as configfile:
         # 指定したconfigファイルを書き込み
         config_ini.write(configfile,True)
+    
+    
 
-
-def simulation():
+@eel.expose
+def start_simulation():
     print("シミュレーションを実行します")
-    subprocess.run('python main.py', shell=True)
+    subprocess.run('py main.py', shell=True)
+
+@eel.expose
+def stop_simulation():
+    print('シミュレーションを停止します')
+    #subprocess.run()
+
+
 
 @eel.expose
 def prepare_simulation():
@@ -79,6 +107,32 @@ def render_floors(dir):
 
 @eel.expose
 def import_result_data(path):
+    print(path)
+    json_open = open(path, 'r')
+    data = json.load(json_open)
+    #print(data[0]["agent_list"][100]["temp"])
+    data_x = []
+    data_y = []
+    data_z = []
+    data_temp = []
+    #need_data = []
+    for i in range(len(data[0]["agent_list"])):
+        if data[0]["agent_list"][i]["id"] > 10:
+            data_x.append(data[0]["agent_list"][i]["x"])
+            data_y.append(data[0]["agent_list"][i]["y"])
+            data_z.append(data[0]["agent_list"][i]["z"])
+            data_temp.append(data[0]["agent_list"][i]["temp"])
+            #need_data.append(data[0]["agent_list"][i])
+
+    return data_x,data_y,data_z,data_temp
+        
+
+
+
+
+
+
+    """
     json_open = open(path, 'r')
     data = json.load(json_open)
     all_data = []
@@ -129,9 +183,67 @@ def import_result_data(path):
     }
 
     return result_data
+    """
+
+@eel.expose
+def import_result_data_for_graph(path,x,y,z):
+    json_open = open(path, 'r')
+    data = json.load(json_open)
+    data_temp = []
+    print(x)
+    print(type(x))
+    x = int(x)
+    y = int(y)
+    z = int(z)
+    print(type(x))
+    id = 0
+    print(data[0]["agent_list"][11]["x"])
+    print(type(data[0]["agent_list"][11]["x"]))
+    if data[0]["agent_list"][11]["x"] == x:
+        print("あってる")
+    else:
+        print("違う。")
+    print(data[0]["agent_list"][11]["id"])
+    for i in range(len(data[0]["agent_list"])):
+        if data[0]["agent_list"][i]["x"] == x and data[0]["agent_list"][i]["y"] == y and data[0]["agent_list"][i]["z"] == z:
+            id = data[0]["agent_list"][i]["id"]
+            print("ok")
+            #break
+
+    print(id)
+
+    for i in range(len(data[0]["agent_list"])):
+        for k in range(len(data)):
+            if data[k]["agent_list"][i]["id"] == id:
+                data_temp.append(data[k]["agent_list"][i]["temp"])
+
+    print(data_temp)
+
+    return data_temp
+
+
+
+
+
+
+@eel.expose
+def print_heatmap(data):
+    print("ヒートマップを出力します。")
+    sns.heatmap(data)
+    print("ヒートマップを出力出来ました？")
+
+    np.random.seed(0)
+    uniform_data = np.random.rand(10, 12)
+    sns.heatmap(uniform_data)
+    print("ヒートマップを出力出来ました？？")
+
+
+
 
 @eel.expose
 def exit_simulation():
     print("シミュレーションを中止します。")
-eel.start('test/html/index.html',port=8080)
+
+    
+eel.start('index.html',port=8080)
     
