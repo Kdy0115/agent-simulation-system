@@ -9,6 +9,7 @@ async function first(){
     console.log(data[3]);
 }
 */
+var json_data_flag = false;
 var data;
 
 async function start_simulation(){
@@ -23,6 +24,11 @@ async function print_heatmap(){
   var res = await eel.config_import()();
   output_folder_path = res[7];
   console.log(output_folder_path);
+  if(json_data_flag == false){
+    await eel.open_json(output_folder_path)();
+    json_data_flag = true;
+  }
+  
   data = await eel.import_result_data(output_folder_path)();
   console.log(data[0]);
   console.log(data[1]);
@@ -90,6 +96,10 @@ async function print_graph(){
 
   console.log(x,y,z)
 
+  if(json_data_flag == false){
+    await eel.open_json(output_folder_path)();
+    json_data_flag = true;
+  }
   data_for_graph = await eel.import_result_data_for_graph(output_folder_path,x,y,z)()
 
   console.log(data_for_graph);
