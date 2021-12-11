@@ -1,4 +1,4 @@
-#!python3.5
+
 import eel
 import configparser
 import subprocess
@@ -10,6 +10,8 @@ import glob
 
 import numpy as np
 import seaborn as sns
+
+from controllers import functions
 
 
 
@@ -238,6 +240,45 @@ def print_heatmap(data):
     print("ヒートマップを出力出来ました？？")
 
 
+@eel.expose
+def import_layout_files(*args):
+    """ レイアウト関連ファイルの読み込みを行いJSに返す関数
+
+        args:
+            args[0] [str]: レイアウトファイルパス
+            args[1] [str]: 熱源情報ファイルパス
+            args[2] [str]: 温度取り位置情報ファイルパス
+            
+        Returns:
+            data_layout [dict]          : レイアウトデータ
+            data_source [dict]          : 熱源情報データ
+            data_observe_position [dict]: 温度取り位置情報データ
+    """
+    
+    data_layout           = functions.import_json_file(args[0])
+    data_source           = functions.import_json_file(args[1])
+    data_position_observe = functions.import_json_file(args[2])
+    
+    return (data_layout,data_source,data_position_observe)
+
+@eel.expose
+def render_layout_dir():
+    path = 'data/layout/'
+    files = glob.glob("{}*".format(path))
+    layout_files   = []
+    source_files   = []
+    position_files = []
+    for file in files:
+        file = file.replace('\\','/')
+        if "floor" in file:
+            layout_files.append(file)
+        elif "source" in file:
+            source_files.append(file)
+        elif "position" in file:
+            position_files.append(file)
+
+    return [layout_files,source_files,position_files]
+    
 
 
 @eel.expose
