@@ -320,7 +320,12 @@ function getSelectedValue(id){
 // 2次元マップ用の高さを指定するセレクトボックスを作成
 function createSelectboxFor2dLayout(data){
   var parentNode = document.getElementById('layout-2d-title');
-  parentNode.innerHTML += '高さ:';
+  var childNodeCount = parentNode.childElementCount;
+  if(childNodeCount != 0){
+    parentNode.removeChild(parentNode.lastChild);
+  } else {
+    parentNode.innerHTML += '高さ:';
+  }
   // z軸の高さを取得
   z_layers = data[0]["layout"].length;
   // セレクトボックスインスタンスの作成

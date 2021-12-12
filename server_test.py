@@ -157,7 +157,6 @@ def import_result_data(number):
     data_temp = []
     #need_data = []
     start1 = time.time()
-    print(data)
     for i in range(len(data[number]["agent_list"])):
         if data[number]["agent_list"][i]["class"] == "space":
             data_x.append(data[number]["agent_list"][i]["x"])
