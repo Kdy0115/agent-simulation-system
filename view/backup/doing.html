@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Thermal Environment Simulator</title>
+
+    <link rel="stylesheet" href="heatmap.css"/>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+
+    <!-- eelを使用するため -->
+    <script type="text/javascript" src="/eel.js"></script>
+
+    
+</head>
+<body>
+    <!-- メニュー -->
+    <nav>
+        <a href="index.html">環境設定</a>
+        
+        <a href="doing.html">シミュレーション</a>
+        
+        <a href="evaluation.html">評価</a>
+    </nav>
+
+    <!-- 中身-->
+    <div id="content">
+        <h1>シミュレーション</h1>
+        <div id = "log">
+            <h2>ログ</h2>
+
+
+            <button type='button' id="start_simulation_button" onclick="start_simulation();">実行</button>
+            <button type='button' id="stop_simulation_button" onclick="stop_simulation();">停止</button><br>
+
+        </div>
+        <div id ="result">
+            <h2>結果</h2>
+            <h3>結果を表示するフロアを選択</h3>
+            <select name="floor_number">
+                <option value="floor1">1階</option>
+                <option value="floor2">2階</option>
+                <option value="floor3">3階</option>
+                <option value="floor4">4階</option>
+                <option value="floor5">5階</option>
+                <option value="floor6">6階</option>
+                <option value="floor7">7階</option>
+                <option value="floor8">8階</option>
+                <option value="floor9">9階</option>
+
+            </select>
+
+            <h2>ヒートマップ</h2>
+            <h3>ヒートマップ開始の時間</h3>
+            <input type="datetime-local" id="strat_time"><br>
+            <h3>ヒートマップ終了の時間</h3>
+            <input type="datetime-local" id="end_time"><br>
+            <button type='button' id="print_heatmap" onclick="print_heatmap();">ヒートマップを表示</button>
+<!--
+            <div style="height:400px; width:800px">
+                <canvas id="heatMap1"></canvas>
+            </div>
+
+-->
+            <div class="demo-wrapper">
+                <div class="heatmap" id='heatmap'>
+                </div>
+            </div>
+            
+
+            <h2>グラフを表示する数を指定</h2>
+            <select name="number_of_graph">
+                <option value="one">1個</option>
+                <option value="two">2個</option>
+                <option value="three">3個</option>
+                <option value="four">4個</option>
+                <option value="five">5個</option>
+                <option value="six">6個</option>
+                <option value="seven">7個</option>
+                <option value="eight">8個</option>
+                <option value="nine">9個</option>
+
+            </select>
+            <h3>高さを選択</h3>
+            <input type="radio" name="height" value="ceiling">天井
+            <input type="radio" name="height" value="person_height">人の高さ
+            <input type="radio" name="height" value="floor">床<br>
+
+            <h3>座標を選択</h3>
+            <input type="number" id="graph_x" maxlength="3" value="" placeholder="３から３０まで"><br>
+            <input type="number" id="graph_y" maxlength="3" value="" placeholder="３から９まで"><br>
+            <input type="number" id="graph_z" maxlength="3" value="" placeholder="１から３まで"><br>
+
+            <button type='button' id="print_graph" onclick="print_graph();">グラフを表示</button>
+            <h2>グラフ</h2>
+            <canvas id="graph"></canvas>
+
+
+        </div>
+
+        
+
+    </div>
+
+<script src="js/heatmap.min.js"></script>
+<script type="text/javascript" src="js/doing.js"></script>
+<!--
+<script type="text/javascript" src="js/test_heatmap.js"></script>
+-->
+</body>
+</html>

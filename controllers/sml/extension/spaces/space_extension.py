@@ -135,7 +135,7 @@ class ContinuousSpace3d:
         """ Get all objects within a certain radius.
 
         Args:
-            pos: (x,y) coordinate tuple to center the search at.
+            pos: (x,y,z) coordinate tuple to center the search at.
             radius: Get all the objects within this distance of the center.
             include_center: If True, include an object at the *exact* provided
                             coordinates. i.e. if you are searching for the
@@ -147,6 +147,9 @@ class ContinuousSpace3d:
         if self.torus:
             deltas = np.minimum(deltas, self.size - deltas)
         dists = deltas[:, 0] ** 2 + deltas[:, 1] ** 2 + deltas[:, 2] ** 2
+
+        # 立方体で敷き詰められていると仮定して√2をかける
+        radius *= np.sqrt(2)
 
         (idxs,) = np.where(dists <= radius ** 2)
         neighbors = [
@@ -224,7 +227,7 @@ class ContinuousSpace3d:
         """ Check if a point is out of bounds. """
 
         x, y, z = pos
-        return x < self.x_min or x >= self.x_max or y < self.y_min or y >= self.y_max or z < self.z_min or z >= self.z_max
+        return x < self.x_min or x > self.x_max or y < self.y_min or y > self.y_max or z < self.z_min or z > self.z_max
 
     def get_cell_list_contents( self, cell_list: Iterable[FloatCoordinate_3d]) -> List[GridContent_3d]:
         """

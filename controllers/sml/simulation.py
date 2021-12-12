@@ -1,78 +1,144 @@
-import datetime
+# -*- coding: utf-8 -*-
+
+""" シミュレーション制御モジュール
+"""
+
+
+
+# python lib
 import numpy as np
 import matplotlib.pyplot as plt
-from controllers.sml.model import *
-from controllers.cvt.conversion import dataset
-from controllers.sml.extension.visualization.canvas_grid_visualization_extension import CanvasGrid_3d
 from tqdm import tqdm
-import json
-import math
 import time
-from multiprocessing import Process
+import multiprocessing as mp
 
-class Simulation(Process):
+# utils
+from controllers.sml.model import *
+from controllers.sml.extension.visualization.canvas_grid_visualization_extension import CanvasGrid_3d
+from controllers.sml.inc.define import *
 
-    def __init__(self, num, model, output_folder, floor):
-        super().__init__()
-        self.__num = num
-        self.__model = model
-        self.__output_folder = output_folder
-        self.__floor = floor
-
-    def output_agent_json(self):
-        fw = open('{0}/result{1}.json'.format(self.__output_folder,self.__floor),'w')
-        json.dump(self.__model.spaces_agents_list,fw,indent=4)
-
-    def run_simulation(self, num: int, model):
-        for i in tqdm(range(num)):
-            model.step()
-        return model
-
-    def run(self):
-        self.run_simulation(self.__num, self.__model)
-        self.output_agent_json()
 
 
 class SimulationControl():
+    """ シミュレーションの制御を行うクラス
+    
+        Attributes:
+            simulation_step     [Int] : シミュレーション回数
+            models_floor_dic    [dict]: フロア辞書
+            dataset             [dict]: 辞書形式の結果データ
+            output_folder       [str] : 出力先フォルダ名
+    """    
 
-    def __init__(self,step,dataset):
-        self.floors = [4,5]
-        self.simulation_step = step
+    def __init__(self,post_data,dataclass):
+        self.simulation_step = int(post_data["simulation_step"])
         self.models_floor_dic = {}
-        self.dataset = dataset
-        self.output_folder = self.dataset.output_folder
+        self.dataset = post_data["simulation_data"]
+        self.output_folder = post_data["output_folder"]
+        self.dataclass = dataclass
 
-        for floor in self.floors:
-            model = HeatModel(25, 25, 6, floor, self.simulation_step, self.dataset.control_data)
-            self.models_floor_dic["{}F".format(floor)] = model
+        for data in self.dataset:
+            model = HeatModel(
+                data["init_bems_data"]["floor"], 
+                self.simulation_step, 
+                data["init_bems_data"], 
+                data["control_data"],
+                data["layout_data"],
+                data["source_data"],
+                self.dataclass.simulation_start_time,
+                self.dataclass.simulation_end_time
+            )
+            self.models_floor_dic[data["init_bems_data"]["floor"]] = model
+
+
 
     def _str_simulation_state(self):
+        """ シミュレーション実行開始内容をコンソールに表示するモジュール
+        """        
+        
         print("Simulation starts")
-        time.sleep(0.1)
-        print("Simulation Floors: {}.".format(self.floors))
         time.sleep(0.1)
         print("Simulation Calculation Steps: {}".format(self.simulation_step))
         time.sleep(0.1)
         print("Simulation Results Folder: {}".format(self.output_folder))
+            
+
+    def run_simulation(self,key,model,i):
+        """ シミュレーション実行モジュール
+
+        Args:
+            key   [type]              : [description]
+            model [エージェントモデル]: エージェントシミュレーションモデル
+            i     [Int]               : ラベリングしたプロセス番号
+
+        Returns:
+            result [tupple]: 結果を格納したタプル
+        """        
+        
+        # コンソールに出力する文字列
+        info = f'プロセス#{i:>2} '
+        for _ in tqdm(range(self.simulation_step), desc=info,position=i):
+            if model.terminate:
+                break
+            else:
+                model.step()
+
+        result = (key,model.spaces_agents_list)
+        return result
+    
+    
 
     def run_all_simulations(self):
+        """ マルチプロセスなしの場合のシミュレーション制御モジュール
+
+        Returns:
+            result_arr [array]: シミュレーション実行結果を格納した配列
+        """        
+        
         start = time.time()
-        processes = []
         self._str_simulation_state()
+        result_arr = []
         for key,model in self.models_floor_dic.items():
-            # print("Simulation number {} is running.".format(cnt))
-            process = Simulation(self.simulation_step, model, self.output_folder, key)
-            process.start()
-            processes.append(process)
-            # for i in tqdm(range(self.simulation_step)):
-            #     model.step()
-        # print(processes[0].model)
-        # exit()
-        cnt = 1
-        print()
-        for p in processes:
-            p.join()
-            # self.output_agent_json(key,p.__model)
+            for i in tqdm(range(self.simulation_step+1)):
+                if model.terminate:
+                    break
+                else:
+                    model.step()
+                    if (self.dataclass.bach == False) and (i%60 == 0):
+                        self.dataclass.per_output_data(key,model.spaces_agents_list[-1],i)
+            if self.dataclass.bach == True:
+                result_arr.append((key,model.spaces_agents_list))
         elapsed_time = time.time() - start
         print("Simulation finished!")
         print("Simulation time:{}".format(int(elapsed_time)) + "[sec]")
+
+        return result_arr
+    
+    
+
+    def run_all_simulations_multi_process(self) -> dict:
+        """ マルチプロセス時のシミュレーション制御モジュール
+
+        Returns:
+            output_data [dict]: マルチプロセスで辞書として保存した結果を返すモジュール
+        """        
+        
+        # 現在の時間を取得
+        start = time.time()
+        # シミュレーション実行時のメッセージを出力
+        self._str_simulation_state()
+        # 関数の引数を定義
+        args = list(zip(self.models_floor_dic.keys(),self.models_floor_dic.values(),range(3)))
+        # 引数の長さ
+        L = len(args)
+        
+        # マルチプロセスの実行
+        with mp.Pool() as pool: 
+            self.output_data = pool.starmap(self.run_simulation, args)
+        print("\n" * L)
+        
+        # 実行時間の計算
+        elapsed_time = time.time() - start
+        print("Simulation finished!")
+        print("Simulation time:{}".format(int(elapsed_time)) + "[sec]")
+
+        return self.output_data

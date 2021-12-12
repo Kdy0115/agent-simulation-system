@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Thermal Environment Simulator</title>
+
+    <!-- eelを使用するため -->
+    <script type="text/javascript" src="/eel.js"></script>
+    <script src="https://unpkg.com/three@0.131.3/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.131.3/examples/js/controls/OrbitControls.js"></script>
+    <!-- <script src='https://unpkg.com/three@0.126.0/examples/jsm/WebGL.js'></script>-->
+    <link rel="stylesheet" href="css/layout.css">
+</head>
+<body>
+    <!-- メニュー -->
+    <nav>
+        <a href="index.html">環境設定</a>
+        
+        <a href="doing.html">シミュレーション</a>
+        
+        <a href="evaluation.html">評価</a>
+
+        <a href="layout.html">レイアウト設定</a>
+    </nav>
+
+    <!-- 中身-->
+    <div id="content">
+        <h1>レイアウト設定</h1>
+        <div id="file-form">
+            レイアウトファイル: <select id="layout-files-select-box"><option value=''>ファイルを選択して下さい</option></select><br>
+            熱源情報ファイル: <select id="source-files-select-box"><option value=''>ファイルを選択して下さい</option></select><br>
+            温度取り位置情報ファイル: <select id="position-files-select-box"><option value=''>ファイルを選択して下さい</option></select><br>
+            <button type="button" id="file-import-button" onclick="importLayoutFiles()">ファイル読み込み</button>
+        </div>
+        <div id='layout-preview-screen'>
+          <div id='layout-preview-3d'>
+            <p class='layout-title'>レイアウト全体像（3D）</P>
+            <div id='layout-3d-box'>
+              <canvas id='layout-3d'></canvas>
+            </div>
+          </div>
+          <div id='layout-preview-2d'>
+            <p id='layout-2d-title' class='layout-title'>レイアウト平面（2D）</p>
+            <div id='layout-2d-box'></div>
+            <div id='point-coordinate'></div>
+          </div>
+        </div>
+    </div>
+
+<!--  <script type="text/javascript" src="js/layout.js"></script> -->
+<!-- <script type="text/javascript" src="js/layout3d.js"></script>-->
+<script type="text/javascript" src="js/layout.js"></script>
+</body>
+</html>
