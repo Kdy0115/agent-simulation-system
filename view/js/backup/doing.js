@@ -9,139 +9,130 @@ async function first(){
     console.log(data[3]);
 }
 */
+var json_data_flag = false;
+var data;
 
 async function start_simulation(){
     
-    await eel.start_simulation()();
+  await eel.start_simulation()();
 }
 async function stop_simulation(){
-    await eel.stop_simulation()();
+  await eel.stop_simulation()();
 }
 
 async function print_heatmap(){
-    var res = await eel.config_import()();
-    output_folder_path = res[7];
-    console.log(output_folder_path);
-    data = await eel.import_result_data(output_folder_path)();
-    console.log(data[0]);
-    heatmap_data = [data[0],data[1]];
-    await eel.print_heatmap(heatmap_data)();
-
+  var res = await eel.config_import()();
+  output_folder_path = res[7];
+  console.log(output_folder_path);
+  if(json_data_flag == false){
+    await eel.open_json(output_folder_path)();
+    json_data_flag = true;
+  }
+  
+  data = await eel.import_result_data(output_folder_path)();
+  console.log(data[0]);
+  console.log(data[1]);
+  //heatmap_data = [data[0],data[1]];
+  //await eel.print_heatmap(heatmap_data)();
+  heatmap();
 }
 
-var mydata = {
-    labels: ["１月", "２月", "３月", "４月", "５月", "６月", "７月"],
-    datasets: [
-      {
-        label: '数量',
-        hoverBackgroundColor: "rgba(0,0,0,1)",
-        data: [880, 740, 900, 520, 930],
+
+function heatmap(){
+  console.log("ヒートマップ作成開始")
+  // minimal heatmap instance configuration
+  var heatmapInstance = h337.create({
+    // only container is required, the rest will be defaults
+    container: document.getElementById("heatmap")
+  });
+
+  // now generate some random data
+  var points = [];
+  var max = 0;
+  var min = 100;
+  //var width = 30;
+  //var height = 9;
+  //var len = 252;
+
+  console.log("データ作成中");
+  console.log(data[0][0]);
+  console.log(data[0].length);
+
+  for(let i = 0;i <= data[0].length;i++){
+    if (data[2][i] == 2){
+      max = Math.max(max,data[3][i]);
+      min = Math.min(min,data[3][i]);
+      var point = {
+        x: data[0][i]*30,
+        y: data[1][i]*30,
+        value: data[3][i]
+      }
+      points.push(point);
+    }
+  }
+  console.log("データ作成完了")
+
+  // heatmap data format
+  var data1 = { 
+    max: 30, 
+    min: 0,
+    data: points 
+  };
+  // if you have a set of datapoints always use setData instead of addData
+  // for data initialization
+  // heatmapInstance.setData(data);
+  heatmapInstance.setData(data1);
+  console.log("ヒートマップ作成完了")
+}
+
+async function print_graph(){
+  var res = await eel.config_import()();
+  output_folder_path = res[7];
+  console.log(output_folder_path);
+  
+  x = document.getElementById("graph_x").value;
+  y = document.getElementById("graph_y").value;
+  z = document.getElementById("graph_z").value;
+
+  console.log(x,y,z)
+
+  if(json_data_flag == false){
+    await eel.open_json(output_folder_path)();
+    json_data_flag = true;
+  }
+  data_for_graph = await eel.import_result_data_for_graph(output_folder_path,x,y,z)()
+
+  console.log(data_for_graph);
+
+
+  var ctx = document.getElementById('graph');
+
+  var data = {
+    labels: [0,100,200,300,400,500,600,700,800,900,1000],
+    datasets: [{
+        label: '同一地点の時間による温度変化',
+        data: [data_for_graph[0],data_for_graph[100],data_for_graph[200],data_for_graph[300],data_for_graph[400],data_for_graph[500],data_for_graph[600],data_for_graph[700],data_for_graph[800],data_for_graph[900],data_for_graph[1000]],
+        borderColor: 'rgba(255, 100, 100, 1)',
         lineTension: 0,
         fill: false,
-      }
-    ]
+        borderWidth: 3
+    }]
   };
-  
-  //「オプション設定」
+
   var options = {
     scales: {
         yAxes: [{
             ticks: {
-                
-                beginAtZero: true
+                min: 24
+                //beginAtZero: true
             }
         }]
     }
-};
+  };
   
-  var canvas = document.getElementById('stage');
-  var chart = new Chart(canvas, {
-  
-    type: 'line',  //グラフの種類
-    data: mydata,  //表示するデータ
-    options: options  //オプション設定
-  
+  var ex_chart = new Chart(ctx, {
+      type: 'line',
+      data: data,
+      options: options
   });
-
-const mapHeight = 20;
-const mapWidth = 40;
-
-const maxVal = 741;  // 追加
-
-// データセットの生成
-const generateDatasets = function(){
-  const datasets = []
-  for(let i=0; i<mapHeight; i++){
-    datasets.push({
-      data: new Array(mapWidth).fill(1),
-      borderWidth: 0.2,
-      borderColor: "#FFFFFF",
-      backgroundColor: generateColor(i)   // 変更
-    })
-  }
-  return datasets    
 }
-
-// 色配列の生成 (追加）
-const generateColor = function(y){
-  const datasetColors = []
-  for(let x=0; x<mapWidth; x++){
-    const opa = ((x * y / maxVal)*0.7 + 0.3).toFixed(2);
-    datasetColors.push("rgba(135,206,235," + opa + ")")
-  }
-  return datasetColors
-}
-
-// データラベルの生成
-const generateLabels = function(){
-  let labels = []
-  for (var i=1; i<mapWidth+1; i++){
-    labels.push(i)
-  }
-  return labels
-}
-
-const ctx = document.getElementById('heatMap').getContext('2d')
-const heatMap = new Chart(ctx, {
-  type: 'bar',
-  data: {
-    datasets: generateDatasets(),
-    labels: generateLabels()
-  },
-  options: {
-    title: {
-      display: true,
-      text: 'Heat Map Sample',
-      fontSize: 18,
-    },
-    legend: {
-      display: false
-    },
-    scales: {
-      xAxes: [{
-        gridLines: {
-          color: '#FFFFFF',
-        },
-        barPercentage: 0.99,
-        categoryPercentage: 0.99,
-        stacked: true,
-        ticks: {
-          min: 0,
-          display: false,
-        }
-      }],
-      yAxes: [{
-        gridLines: {
-          color: '#FFFFFF',
-          zeroLineWidth: 0
-        },
-        stacked: true,
-        ticks: {
-          min: 0,
-          stepSize: 1,
-          display: false
-        }
-      }]
-    },
-  }
-});

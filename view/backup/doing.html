@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <title>Thermal Environment Simulator</title>
 
+    <link rel="stylesheet" href="heatmap.css"/>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
 
     <!-- eelを使用するため -->
     <script type="text/javascript" src="/eel.js"></script>
+
+    
 </head>
 <body>
     <!-- メニュー -->
@@ -52,10 +56,17 @@
             <h3>ヒートマップ終了の時間</h3>
             <input type="datetime-local" id="end_time"><br>
             <button type='button' id="print_heatmap" onclick="print_heatmap();">ヒートマップを表示</button>
-
+<!--
             <div style="height:400px; width:800px">
-                <canvas id="heatMap"></canvas>
+                <canvas id="heatMap1"></canvas>
             </div>
+
+-->
+            <div class="demo-wrapper">
+                <div class="heatmap" id='heatmap'>
+                </div>
+            </div>
+            
 
             <h2>グラフを表示する数を指定</h2>
             <select name="number_of_graph">
@@ -73,10 +84,16 @@
             <h3>高さを選択</h3>
             <input type="radio" name="height" value="ceiling">天井
             <input type="radio" name="height" value="person_height">人の高さ
-            <input type="radio" name="height" value="floor">床
+            <input type="radio" name="height" value="floor">床<br>
 
+            <h3>座標を選択</h3>
+            <input type="number" id="graph_x" maxlength="3" value="" placeholder="３から３０まで"><br>
+            <input type="number" id="graph_y" maxlength="3" value="" placeholder="３から９まで"><br>
+            <input type="number" id="graph_z" maxlength="3" value="" placeholder="１から３まで"><br>
+
+            <button type='button' id="print_graph" onclick="print_graph();">グラフを表示</button>
             <h2>グラフ</h2>
-            <canvas id="stage"></canvas>
+            <canvas id="graph"></canvas>
 
 
         </div>
@@ -84,6 +101,11 @@
         
 
     </div>
+
+<script src="js/heatmap.min.js"></script>
 <script type="text/javascript" src="js/doing.js"></script>
+<!--
+<script type="text/javascript" src="js/test_heatmap.js"></script>
+-->
 </body>
 </html>
