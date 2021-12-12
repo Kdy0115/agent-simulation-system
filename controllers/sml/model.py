@@ -45,7 +45,7 @@ RESET_BEMS_DATA_SPAN = 30
 
 class Space(Agent):
     """ 空間エージェントクラス
-    　　室内の空間自体を表しています。1立方メートルの大きさと仮定
+        室内の空間自体を表しています。1立方メートルの大きさと仮定
         mesaのエージェントクラスをオーバーライド
 
     Attributes:
@@ -178,9 +178,9 @@ class SpaceHeatCharge(Agent):
         
 class HeatSource(Agent):
     """ 壁や床などの熱源を表す熱源エージェントクラス
-    　　想定している熱源は　窓、壁、床、天井、人やPCなどの熱源
-      　同様に1立方メートルを想定
-    　　mesaのエージェントクラスをオーバーライド
+        想定している熱源は窓、壁、床、天井、人やPCなどの熱源
+        同様に1立方メートルを想定
+        mesaのエージェントクラスをオーバーライド
 
     Attributes:
         pos [tupple]         : 熱源エージェントの位置座標
@@ -219,17 +219,21 @@ class HeatSource(Agent):
             self.temp = 25
             self.energy = self.temp * self.capacity
 
-    def radiant_heat(self):
+    def radiant_heat(self,day_kind):
         """ 隣接する空間に熱放射を行うモジュール
         """
-        
+        if day_kind == 1:
+            _human_heat_ratio = HUMAN_HEAT_RATIO * 0.5
+        else:
+            _human_heat_ratio = HUMAN_HEAT_RATIO
+            
         if len(self.neighbors_list) < 1:
             self.neighbors_list = self.model.grid.get_neighbors(self.pos, 1, include_center=False)            
         for other in self.neighbors_list:
             if other.__class__.__name__ == "Space":
                 # 人の場合は自身のプロパティは変更されない
                 if self.kind == HEAT_SOURCE_KIND_OTHERS:
-                    sum_heat = (abs(self.temp - other.temp) * HUMAN_HEAT_RATIO) / len(self.neighbors_list)
+                    sum_heat = (abs(self.temp - other.temp) * _human_heat_ratio) / len(self.neighbors_list)
                     # if self.temp > other.temp:
                     other.energy += sum_heat
                     other.temp += sum_heat / other.capacity
@@ -248,7 +252,7 @@ class HeatSource(Agent):
                         other.temp -= sum_heat/other.capacity
 
     def out_barrier_agent(self):
-        """　
+        """
         """        
         agent_data = {
             "id"    : self.unique_id,
@@ -272,12 +276,14 @@ class HeatSource(Agent):
             # print(self.model.time)
             self.update_temp()
         self.server_room_barrier_setting()
-        start_time = datetime(self.model.time.year,self.model.time.month,self.model.time.day,8,0,0)
-        end_time   = datetime(self.model.time.year,self.model.time.month,self.model.time.day,17,0,0)
-        if ((self.kind == HEAT_SOURCE_KIND_OTHERS) and (self.model.time < start_time or self.model.time > end_time)):
-            pass
+        week = self.model.time.strftime('%A')
+        work_start_time = datetime(self.model.time.year,self.model.time.month,self.model.time.day,8,0,0)
+        work_end_time   = datetime(self.model.time.year,self.model.time.month,self.model.time.day,17,0,0)
+        # 業務時間外か休みの日は人の熱量は除く
+        if ((self.kind == HEAT_SOURCE_KIND_OTHERS) and ((self.model.time < work_start_time or self.model.time > work_end_time) or (week == 'Sunday' or week == 'Saturday'))):
+            self.radiant_heat(1)
         else:
-            self.radiant_heat()
+            self.radiant_heat(0)
 
         
 
@@ -729,7 +735,7 @@ class HeatModel(Model):
             pos [tupple]: 位置座標の値
 
         Returns:
-            [bool]: True->被っている　False->被っていない
+            [bool]: True->被っている False->被っていない
         """        
         for ac_pos in self.init_ac_coordinate_arr:
             if (ac_pos[0] == pos[0]) and (ac_pos[1] == pos[1]) and (ac_pos[2] == ac_pos[2]):
@@ -800,8 +806,8 @@ class HeatModel(Model):
                 
     def __set_init_agents_position(self):
         """ レイアウトを定義するメソッド
-        　　datasetクラスから渡されたレイアウト情報と熱源情報から各エージェントを配置
-          　レイアウト情報とは別の熱源情報から優先的にエージェントを配置
+            datasetクラスから渡されたレイアウト情報と熱源情報から各エージェントを配置
+            レイアウト情報とは別の熱源情報から優先的にエージェントを配置
             人や机やPCなどを優先的に配置していいく
         """        
         for z in range(self.depth):
@@ -818,6 +824,9 @@ class HeatModel(Model):
                     elif heat_source_exist and heat_source_id != -1:
                         heat_source = self.source_data[heat_source_id]
                         self.__set_init_agent_place(self,HEAT_SOURCE_KIND_OTHERS,pos,heat_source["temp"])
+                        # 熱源と同じ位置に空間も配置
+                        agent_kind = 1
+                        self.__set_init_agent_place(agent_kind,pos,temp,near_ac_id)
                     # それ以外の場合はレイアウト情報に合わせてエージェントの配置
                     else:
                         agent_kind = self.layout_data[z][y][x]
@@ -825,10 +834,10 @@ class HeatModel(Model):
 
     def __set_init_layout(self):
         """ シミュレーションの空間レイアウト初期値を設定するメソッド
-        　　渡されるデータは3次元の配列 [[[...],[...],...], [[...],[...],...],...]
-              　・1次元：z軸の値
-                ・2次元：y軸の値
-                ・3次元：x軸の値
+            渡されるデータは3次元の配列 [[[...],[...],...], [[...],[...],...],...]
+                ・1次元:z軸の値
+                ・2次元:y軸の値
+                ・3次元:x軸の値
                 
             配列内の値がエージェントの種類を示す
                 ・0: エージェントは存在しない
@@ -839,9 +848,9 @@ class HeatModel(Model):
                 ・5: 天井エージェント
             
             デフォルトでは各軸の最小値は0に設定されており
-                ・zが大きくなる　→　鉛直方向に向かって高くなる
-                ・yが大きくなる　→　奥に向かって高くなる
-                ・xが大きくなる　→　横方向（右側）に向かって大きくなる
+                ・zが大きくなる → 鉛直方向に向かって高くなる
+                ・yが大きくなる → 奥に向かって高くなる
+                ・xが大きくなる → 横方向（右側）に向かって大きくなる
             
                 ex) (0,0,0)は床側の左下の位置を表す。
         """
@@ -928,7 +937,7 @@ class HeatModel(Model):
     def print_state(self):
         """ 現在のシミュレーション時間を出力するメソッド
         """        
-        print("時間：{}".format(self.time))
+        print("時間:{}".format(self.time))
 
     def step(self):
         """ エージェントモデル全体の1ステップを定義したメソッド

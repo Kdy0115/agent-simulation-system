@@ -9,6 +9,7 @@
 from datetime import date
 import datetime
 import os
+import json
 
 def create_dir(path: str) -> None:
     """ ディレクトリ作成関数
@@ -96,3 +97,24 @@ def format_time(str_time: str) -> str:
 
         # YYYY/MM/DD hh:mm:00に変換
         return "{0}/{1}/{2} {3}:{4}:00".format(year,month,day,hour,minutes)
+    
+    
+    
+def import_json_file(path: str) -> dict:
+    """ 引数のパス名のjsonファイルを読み込み返す関数
+
+    Args:
+        path [str]: jsonファイルパス
+
+    Returns:
+        dict: 読み込んだJsonのデータ
+    """
+    
+    try:
+        json_open = open(path, 'r')
+        data_json = json.load(json_open)
+        print("{}: jsonファイルを読み込みます".format(path))
+        return data_json
+    except:
+        print("{}:jsonファイルの読み込めませんでした".format(path))
+        return None
