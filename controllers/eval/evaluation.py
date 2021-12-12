@@ -21,16 +21,16 @@ from controllers import error,env,functions
 
 
 # 出力先フォルダパス
-output_dir_path = "eval/result_2021_08_23/"
+output_dir_path = "eval/result_2021_08_22/"
 # シミュレーション結果フォルダ
-out_simulation_result_dir = "out/result_2021_08_23_pos/"
+out_simulation_result_dir = "out/result_2021_08_22/"
 # 吸い込み評価用ファイルパス
 base_file_inhalt_path = "data/config_data/2021_08_14_27/base/all_bems_data5.csv"
 
 # 温度取りデータ評価用ファイル
 observe_file_path = "data/config_data/observe/all/observe1.csv"
 # 温度取りデータ位置座標ファイルパス
-position_data = "data/config_data/observe/position.json"
+position_data = "data/layout/position.json"
 
 # 読み込む吸い込み用シミュレーション結果ファイル
 out_file_path = '{}cmp/result5.csv'.format(out_simulation_result_dir)
