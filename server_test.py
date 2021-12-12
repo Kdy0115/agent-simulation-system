@@ -32,8 +32,22 @@ def on_button_clicked():
     print("Button clicked[Python]")
     eel.showAlert("Button clicked!")
 
+
+#################################################################################
+# 設定ファイルを編集用サーバー側プログラム                                      #
+#################################################################################
+
 @eel.expose
 def config_import():
+    """ 設定ファイルを読み込んでブラウザに返す関数
+
+    Returns:
+        config_simulation['start_time'] [date]          : シミュレーション開始時間
+        config_simulation['end_time'] [date]            : シミュレーション終了時間
+        config_bems['bems_file_path'] [str]             : BEMSファイルパス
+        config_simulation['control_file_path'] [date]   : 制御計画ファイルパス
+        
+    """    
     config_ini = configparser.ConfigParser()
     config_ini.read('config/config.ini', encoding='utf-8')
 
@@ -41,14 +55,24 @@ def config_import():
     config_control    = config_ini["CONTROL"]
     config_simulation = config_ini["SIMULATION"]
     config_layout     = config_ini["LAYOUT"]
-    
-
 
     return config_simulation["start_time"], config_simulation['end_time'], config_bems['bems_file_path'], config_control['control_file_path'], config_layout['lyaout_floor_file_path'], config_layout['skeleton_file_path'], config_layout['heat_source_file_path'], config_simulation['output_folder_path']
 
 
 @eel.expose
 def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_floor_file_path,skeleton_file_path,heat_source_file_path,output_folder_path):
+    """ ブラウザから返された設定をconfig.iniに反映する関数
+
+    Args:
+        start_time ([type]): [description]
+        end_time ([type]): [description]
+        bems_file_path ([type]): [description]
+        control_file_path ([type]): [description]
+        lyaout_floor_file_path ([type]): [description]
+        skeleton_file_path ([type]): [description]
+        heat_source_file_path ([type]): [description]
+        output_folder_path ([type]): [description]
+    """    
     config_ini = configparser.ConfigParser()
     config_ini.read('config/config_test.ini', encoding='utf-8')
 
@@ -60,13 +84,16 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
     config_ini["LAYOUT"]["heat_source_file_path"] = heat_source_file_path
     config_ini["LAYOUT"]["lyaout_floor_file_path"] = lyaout_floor_file_path
     config_ini["LAYOUT"]["skeleton_file_path"] = skeleton_file_path
-    #config_ini["CALCULATION"]["multiprocess"] = 'False'
 
     with open('config/config_test.ini', 'w',encoding="utf-8") as configfile:
         # 指定したconfigファイルを書き込み
         config_ini.write(configfile,True)
     
     
+    
+#################################################################################
+# シミュレーション実行用サーバー側プログラム                                    #
+#################################################################################    
 
 @eel.expose
 def start_simulation():
@@ -109,6 +136,7 @@ def render_floors(dir):
 def open_json(path):
     print(path)
     global json_all_data
+    path += 'result5.json'
     json_open = open(path, 'r')
     json_all_data = json.load(json_open)
 
@@ -129,6 +157,7 @@ def import_result_data(number):
     data_temp = []
     #need_data = []
     start1 = time.time()
+    print(data)
     for i in range(len(data[number]["agent_list"])):
         if data[number]["agent_list"][i]["id"] > 10:
             data_x.append(data[number]["agent_list"][i]["x"])
@@ -254,6 +283,10 @@ def print_heatmap(data):
     print("ヒートマップを出力出来ました？？")
 
 
+#################################################################################
+# レイアウト描画用サーバー側プログラム                                          #
+#################################################################################
+
 @eel.expose
 def import_layout_files(*args):
     """ レイアウト関連ファイルの読み込みを行いJSに返す関数
@@ -295,10 +328,23 @@ def render_layout_dir():
     
 
 
+#################################################################################
+# ヒートマップ編集（村上）                                                      #
+#################################################################################
+@eel.expose
+def import_json_result_file(file_path):
+    result_file = functions.import_json_file(file_path)
+    
+    return result_file
+
 @eel.expose
 def exit_simulation():
     print("シミュレーションを中止します。")
 
-    
+
+#################################################################################
+# サーバー起動プログラム                                                        #
+#################################################################################    
+
 eel.start('index.html',port=8080)
     
