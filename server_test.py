@@ -159,7 +159,7 @@ def import_result_data(number):
     start1 = time.time()
     print(data)
     for i in range(len(data[number]["agent_list"])):
-        if data[number]["agent_list"][i]["id"] > 10:
+        if data[number]["agent_list"][i]["class"] == "space":
             data_x.append(data[number]["agent_list"][i]["x"])
             data_y.append(data[number]["agent_list"][i]["y"])
             data_z.append(data[number]["agent_list"][i]["z"])
@@ -169,65 +169,6 @@ def import_result_data(number):
     sort_time = time.time()-start1
     print("sort_time = ",sort_time)
     return data_x,data_y,data_z,data_temp
-        
-
-
-
-
-
-
-    """
-    json_open = open(path, 'r')
-    data = json.load(json_open)
-    all_data = []
-    height_max = -1
-    height_min = 10000
-    width_max = -1
-    width_min = 10000
-    for i in data[0]["agent_list"]:
-        if height_max < i["y"]:
-            height_max = i["y"]
-        if width_max < i["x"]:
-            width_max = i["x"]
-        if height_min > i["y"]:
-            height_min = i["y"]
-        if width_min > i["x"]:
-            width_min = i["x"]
-
-    for i in range(int(width_max)):
-        for j in range(int(height_max)):
-            for k in data[0]["agent_list"]:
-                include_flag = False
-                if "class" in k.keys():
-                    if k["x"] == i and k["y"] == j and k["z"] == 1 and k["class"] == "space":
-                        include_flag = True
-                        all_data.append(k["temp"])
-                        break
-            if include_flag == False:
-                all_data.append(-1)
-    
-    x_arr = []
-    ac_id_arr = []
-    result_arr = []
-    for val in data[0]["agent_list"]:
-        if "ac_id" in val.keys():
-            id_dict = {
-                "ac_id":val["ac_id"],
-                "data":[]
-            }
-            ac_id_arr.append(val["ac_id"])
-            result_arr.append(id_dict)
-                
-
-    
-    result_data = {
-        "max_height":height_max,
-        "max_width" : width_max,
-        "data"      : all_data
-    }
-
-    return result_data
-    """
 
 @eel.expose
 def import_result_data_for_graph(path,x,y,z):
