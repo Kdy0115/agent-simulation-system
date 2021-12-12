@@ -21,6 +21,7 @@ env:
 #-------------------------#
 jobs:
   build:
+    steps:
   #   #-- 仮想マシンのOSを指定（ここではUbuntuの最新版） --#
   #   runs-on: ubuntu-latest
   #   steps:
@@ -28,9 +29,9 @@ jobs:
   #     - name: Checkout
   #       uses: actions/checkout@v2
 
-    #-- Slack通知 --#
-    - name: Slack Notification on Success
-      uses: rtCamp/action-slack-notify@v2
-      env:
-        SLACK_TITLE: GitへのPush通知
-        SLACK_COLOR: good
+      #-- Slack通知 --#
+      - name: Slack Notification on Success
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_TITLE: GitへのPush通知
+          SLACK_COLOR: good
