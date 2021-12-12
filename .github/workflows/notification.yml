@@ -1,0 +1,36 @@
+name: push notification to slack
+#-------------------------#
+# トリガー
+#-------------------------#
+on:
+  #-- mainブランチにpushされたら起動する --#
+  push:
+    branches:
+      - develop_ver4
+
+#-------------------------#
+# 環境変数
+#-------------------------#
+env:
+  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+  SLACK_USERNAME: Push Notification Bot
+  SLACK_CHANNEL: シミュレーション開発
+
+#-------------------------#
+# 実際の処理
+#-------------------------#
+jobs:
+  build:
+    #-- 仮想マシンのOSを指定（ここではUbuntuの最新版） --#
+    runs-on: ubuntu-latest
+    steps:
+      # #-- Gitリポジトリの内容を取得 --#
+      # - name: Checkout
+      #   uses: actions/checkout@v2
+
+      #-- Slack通知 --#
+      - name: Slack Notification on Success
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_TITLE: GitへのPush通知
+          SLACK_COLOR: good
