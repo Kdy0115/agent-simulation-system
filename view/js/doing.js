@@ -65,9 +65,19 @@ function heatmap(){
   console.log("データ作成中");
   console.log(data[0][0]);
   console.log(data[0].length);
+  
+  for(var i=0; i<3;i++){
+    if(document.heatmap_z_select.height[i].checked){
+      
+      var heatmap_z = document.heatmap_z_select.height[i].value;
+    }
+  }
+
+  //var heatmap_z = document.getElementById("heatmap_z");
+  console.log(heatmap_z);
 
   for(let i = 0;i <= data[0].length;i++){
-    if (data[2][i] == 2){
+    if (data[2][i] == heatmap_z){
       max = Math.max(max,data[3][i]);
       min = Math.min(min,data[3][i]);
       var point = {

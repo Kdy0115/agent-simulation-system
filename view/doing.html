@@ -58,6 +58,14 @@
             <input type="datetime-local" id="strat_time"><br>
             <h3>ヒートマップ終了の時間</h3>
             <input type="datetime-local" id="end_time"><br>
+            <h3>出力するヒートマップの高さ指定</h3>
+            <h3>高さを選択</h3>
+            <form name="heatmap_z_select">
+                <input type="radio" name="height" value="3">天井
+                <input type="radio" name="height" value="2">人の高さ
+                <input type="radio" name="height" value="1">床
+            </form>
+            
             <button type='button' id="print_heatmap" onclick="print_heatmap();">ヒートマップを表示</button>
 <!--
             <div style="height:400px; width:800px">
