@@ -7,11 +7,12 @@ import sys
 import os
 import json
 import glob
+import time
 
 import numpy as np
 import seaborn as sns
 
-
+global json_all_data
 
 # ユーザー定義ファイル
 # import main
@@ -60,7 +61,7 @@ def configure_save(start_time,end_time,bems_folder_path,control_folder_path,layo
     config_ini["LAYOUT"]["hot_position_folder_path0"] = hot_position_folder_path0
     config_ini["LAYOUT"]["layout_input_folder_path0"] = layout_input_folder_path0
     config_ini["LAYOUT"]["skeleton_layout_input_folder_path0"] = skeleton_layout_input_folder_path0
-    config_ini["CALCULATION"]["multiprocess"] = 'False'
+    #config_ini["CALCULATION"]["multiprocess"] = 'False'
 
     with open('config/config_test.ini', 'w',encoding="utf-8") as configfile:
         # 指定したconfigファイルを書き込み
@@ -106,24 +107,39 @@ def render_floors(dir):
 
 
 @eel.expose
-def import_result_data(path):
+def open_json(path):
     print(path)
+    global json_all_data
     json_open = open(path, 'r')
-    data = json.load(json_open)
-    #print(data[0]["agent_list"][100]["temp"])
+    json_all_data = json.load(json_open)
+
+
+@eel.expose
+def import_result_data(number):
+    global json_all_data
+    start = time.time()
+    #print(path)
+    
+    data = json_all_data
+    open_time = time.time()-start
+    print("open_time = ",open_time)
+    #print(data[number]["agent_list"][100]["temp"])
     data_x = []
     data_y = []
     data_z = []
     data_temp = []
     #need_data = []
-    for i in range(len(data[0]["agent_list"])):
-        if data[0]["agent_list"][i]["id"] > 10:
-            data_x.append(data[0]["agent_list"][i]["x"])
-            data_y.append(data[0]["agent_list"][i]["y"])
-            data_z.append(data[0]["agent_list"][i]["z"])
-            data_temp.append(data[0]["agent_list"][i]["temp"])
+    start1 = time.time()
+    for i in range(len(data[number]["agent_list"])):
+        if data[number]["agent_list"][i]["id"] > 10:
+            data_x.append(data[number]["agent_list"][i]["x"])
+            data_y.append(data[number]["agent_list"][i]["y"])
+            data_z.append(data[number]["agent_list"][i]["z"])
+            data_temp.append(data[number]["agent_list"][i]["temp"])
             #need_data.append(data[0]["agent_list"][i])
 
+    sort_time = time.time()-start1
+    print("sort_time = ",sort_time)
     return data_x,data_y,data_z,data_temp
         
 
@@ -187,8 +203,9 @@ def import_result_data(path):
 
 @eel.expose
 def import_result_data_for_graph(path,x,y,z):
-    json_open = open(path, 'r')
-    data = json.load(json_open)
+    global json_all_data
+    
+    data = json_all_data
     data_temp = []
     print(x)
     print(type(x))
