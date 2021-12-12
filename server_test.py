@@ -48,20 +48,18 @@ def config_import():
 
 
 @eel.expose
-def configure_save(start_time,end_time,bems_folder_path,control_folder_path,layout_input_folder_path0,skeleton_layout_input_folder_path0,hot_position_folder_path0,output_folder_path):
+def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_floor_file_path,skeleton_file_path,heat_source_file_path,output_folder_path):
     config_ini = configparser.ConfigParser()
     config_ini.read('config/config_test.ini', encoding='utf-8')
 
     config_ini["SIMULATION"]["start_time"] = start_time
     config_ini["SIMULATION"]["end_time"] = end_time
-    #print(type('output_folder_path'))
-    #print(bems_folder_path)
     config_ini["SIMULATION"]["output_folder_path"] = output_folder_path
-    config_ini["BEMS"]["bems_folder_path"] = bems_folder_path
-    config_ini["CONTROL"]["control_folder_path"] = control_folder_path
-    config_ini["LAYOUT"]["hot_position_folder_path0"] = hot_position_folder_path0
-    config_ini["LAYOUT"]["layout_input_folder_path0"] = layout_input_folder_path0
-    config_ini["LAYOUT"]["skeleton_layout_input_folder_path0"] = skeleton_layout_input_folder_path0
+    config_ini["BEMS"]["bems_file_path"] = bems_file_path
+    config_ini["CONTROL"]["control_file_path"] = control_file_path
+    config_ini["LAYOUT"]["heat_source_file_path"] = heat_source_file_path
+    config_ini["LAYOUT"]["lyaout_floor_file_path"] = lyaout_floor_file_path
+    config_ini["LAYOUT"]["skeleton_file_path"] = skeleton_file_path
     #config_ini["CALCULATION"]["multiprocess"] = 'False'
 
     with open('config/config_test.ini', 'w',encoding="utf-8") as configfile:
