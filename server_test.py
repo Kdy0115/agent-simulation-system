@@ -35,7 +35,7 @@ def on_button_clicked():
 @eel.expose
 def config_import():
     config_ini = configparser.ConfigParser()
-    config_ini.read('config/config_test.ini', encoding='utf-8')
+    config_ini.read('config/config.ini', encoding='utf-8')
 
     config_bems       = config_ini["BEMS"]
     config_control    = config_ini["CONTROL"]
@@ -44,7 +44,7 @@ def config_import():
     
 
 
-    return config_simulation["start_time"], config_simulation['end_time'], config_bems['bems_folder_path'], config_control['control_folder_path'], config_layout['layout_input_folder_path0'], config_layout['skeleton_layout_input_folder_path0'], config_layout['hot_position_folder_path0'], config_simulation['output_folder_path']
+    return config_simulation["start_time"], config_simulation['end_time'], config_bems['bems_file_path'], config_control['control_file_path'], config_layout['lyaout_floor_file_path'], config_layout['skeleton_file_path'], config_layout['heat_source_file_path'], config_simulation['output_folder_path']
 
 
 @eel.expose

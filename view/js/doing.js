@@ -1,14 +1,3 @@
-/*
-data = [0]
-first()
-
-async function first(){
-    var res = await eel.config_import()();
-    output_folder_path = res[7];
-    data = await eel.import_result_data(output_folder_path)();
-    console.log(data[3]);
-}
-*/
 var json_data_flag = false;
 var data;
 var number;
@@ -33,8 +22,7 @@ async function print_heatmap(){
   data = await eel.import_result_data(number)();
   console.log(data[0]);
   console.log(data[1]);
-  //heatmap_data = [data[0],data[1]];
-  //await eel.print_heatmap(heatmap_data)();
+  
   heatmap();
 }
 
@@ -45,8 +33,7 @@ async function previous_heatmap(){
   data = await eel.import_result_data(number)();
   console.log(data[0]);
   console.log(data[1]);
-  //heatmap_data = [data[0],data[1]];
-  //await eel.print_heatmap(heatmap_data)();
+  
   heatmap();
 }
 
@@ -55,17 +42,15 @@ async function next_heatmap(){
   data = await eel.import_result_data(number)();
   console.log(data[0]);
   console.log(data[1]);
-  //heatmap_data = [data[0],data[1]];
-  //await eel.print_heatmap(heatmap_data)();
+  
   heatmap();
 }
 
 
 function heatmap(){
   console.log("ヒートマップ作成開始")
-  // minimal heatmap instance configuration
+  
   var heatmapInstance = h337.create({
-    // only container is required, the rest will be defaults
     container: document.getElementById("heatmap")
   });
 
