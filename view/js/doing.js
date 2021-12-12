@@ -11,6 +11,7 @@ async function first(){
 */
 var json_data_flag = false;
 var data;
+var number;
 
 async function start_simulation(){
     
@@ -28,8 +29,30 @@ async function print_heatmap(){
     await eel.open_json(output_folder_path)();
     json_data_flag = true;
   }
-  
-  data = await eel.import_result_data(output_folder_path)();
+  number = 0;
+  data = await eel.import_result_data(number)();
+  console.log(data[0]);
+  console.log(data[1]);
+  //heatmap_data = [data[0],data[1]];
+  //await eel.print_heatmap(heatmap_data)();
+  heatmap();
+}
+
+async function previous_heatmap(){
+  if(number != 0){
+    number = number - 1;
+  }
+  data = await eel.import_result_data(number)();
+  console.log(data[0]);
+  console.log(data[1]);
+  //heatmap_data = [data[0],data[1]];
+  //await eel.print_heatmap(heatmap_data)();
+  heatmap();
+}
+
+async function next_heatmap(){
+  number = number + 1;
+  data = await eel.import_result_data(number)();
   console.log(data[0]);
   console.log(data[1]);
   //heatmap_data = [data[0],data[1]];
