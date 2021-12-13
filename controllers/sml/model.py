@@ -269,6 +269,8 @@ class HeatSource(Agent):
         # 室内の熱源以外のとき
         if self.kind != HEAT_SOURCE_KIND_OTHERS:
             self.temp = self.model.init_bems_data["{}吸込温度".format(self.base_ac_id)]
+            if self.pos[2] < 3 and self.pos[0] < 10:
+                self.temp = (self.temp + self.model.out_temp)/2
             self.energy = self.temp * self.capacity
 
     def step(self):
@@ -629,7 +631,7 @@ class AirConditioner(Agent):
             self.read_control_data()
             self.switch_mode()
             # if self.mode != 0:
-            #     self.see_class()
+            # self.see_class()
         self.create_heat()
         self.output_ac_data()
 
@@ -708,6 +710,7 @@ class HeatModel(Model):
     def __set_init_bems_data(self):
         self.bems_data_num = 0
         self.init_bems_data = self.all_bems_data[self.bems_data_num]
+        self.out_temp = self.init_bems_data['外気温']
         # self.bems_data_num += 1
         
     def __set_init_ac_agents(self):
@@ -778,6 +781,7 @@ class HeatModel(Model):
         agent = -1
         # 空間エージェントの場合
         if kind == HEAT_KIND_SPACE:
+            temp = 26.5
             agent = Space(self.next_id(),self,pos,temp)
         # 空間エージェント以外の場合
         elif kind == HEAT_SOURCE_KIND_WINDOW or kind == HEAT_SOURCE_KIND_BARRIER or kind == HEAT_SOURCE_KIND_FLOOR or kind == HEAT_SOURCE_KIND_CEILING:
@@ -816,6 +820,11 @@ class HeatModel(Model):
                     pos = (float(x),float(y),float(z))
                     # 最も近い空調エージェントを基準
                     temp, near_ac_id = self.__determine_agent_temp_from_ac(pos)
+                    # 初期の温度の天井側以外（z = 0, 1, 2のみ）と左側の窓付近のみ外気温と吸込温度の平均値に設定する
+                    if z < 3:
+                        temp = (temp + self.out_temp) / 2
+                    elif z == 3:
+                        temp = (temp*2 + self.out_temp) / 3
                     # 熱源があるかを調べる
                     heat_source_exist, heat_source_id = self.__check_heat_source_agent_exist(pos)
                     if self.__check_ac_postiion_overwrap(pos):
@@ -905,7 +914,12 @@ class HeatModel(Model):
                 for i in self.ac_agents_list:
                     distance_arr.append(self.grid.get_distance(i.pos,pos_format))
                 base_id = self.ac_agents_list[distance_arr.index(min(distance_arr))].ac_id
-                agent.temp = self.init_bems_data["{}吸込温度".format(base_id)]
+                temp = self.init_bems_data["{}吸込温度".format(base_id)]
+                # 真ん中より窓際でかつ人の高さより低ければ外気温との平均をとる
+                if z_i < 3 and x_i < 10:
+                    agent.temp = (temp + self.out_temp) / 2
+                else:
+                    agent.temp = temp
 
     def check_next_bems_data(self):
         """ 次のBEMSデータが存在するかチェックするメソッド
@@ -915,6 +929,7 @@ class HeatModel(Model):
             cmp_time = self.all_bems_data[self.bems_data_num]["時間"]    
             if self.time == cmp_time:
                 self.init_bems_data = self.all_bems_data[self.bems_data_num]
+                self.out_temp = self.init_bems_data['外気温']
                 print(self.init_bems_data,cmp_time)
                 self._reset_heat_source_temp()
         self.bems_data_num += 1

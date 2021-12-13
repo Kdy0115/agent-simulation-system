@@ -157,7 +157,7 @@ def inhalation_temp_evaluation(out_file_path,output_dir,base_file_path):
     df_result.columns,extract_columns,setting_columns = rename_columns(df_base)
     df_merge = pd.merge(df_base, df_result, on='時間', how="right")
     try:
-        df_merge["外気温"] = df_base["5気温"].values
+        df_merge["外気温"] = df_base["外気温"].values
     except ValueError:
         df_merge["外気温"] = 0
 
@@ -196,15 +196,15 @@ def create_observe_graphe(df,column,dir_path):
     
     y2 = df[str(column)+"_予測値"]
     
-    ax.plot(x,y1,label="実測値")
-    ax.plot(x,y2,label="予測値")
+    ax.plot(x,y1,label="Observation value")
+    ax.plot(x,y2,label="Predicted value")
     
     ax.xaxis.set_major_locator(ticker.FixedLocator(x_label_time))
 
     ax.set_xticklabels(x_label_id)
-    ax.set_title("温度取り{}番比較結果".format(column),fontsize=24)
-    ax.set_xlabel("時間[min]",fontsize=24)
-    ax.set_ylabel("温度[℃]",fontsize=24)
+    ax.set_title("Result of observe temp number{}".format(column),fontsize=24)
+    ax.set_xlabel("time[min]",fontsize=24)
+    ax.set_ylabel("temp[℃]",fontsize=24)
     ax.set_ylim([min_temp,max_temp])
     ax.legend(loc='upper left',fontsize=24)
 
