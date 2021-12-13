@@ -1,0 +1,13 @@
+nav .nav-wrapper i, nav a.sidenav-trigger, nav a.sidenav-trigger i {
+    height: 100px;
+    line-height: 100px;
+}
+
+nav ul a{
+    font-size: 1.2rem;
+}
+
+nav ul li{
+    width: 25%;
+    font-size: 1.2rem;
+}
