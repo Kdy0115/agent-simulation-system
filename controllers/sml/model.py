@@ -108,7 +108,6 @@ class Space(Agent):
     def output_space_agent(self):
         """ エージェントの状態を保存するモジュール
         """
-        
         agent_data = {
             "id"    : self.unique_id,
             "temp"  : self.temp,
@@ -718,6 +717,7 @@ class HeatModel(Model):
         for one in self.ac_position:
             # 空調の配置
             pos = (float(one["x"]),float(one["y"]),float(one["z"]))
+            print(pos)
             agent = AirConditioner(self.next_id(),self,pos,one["id"],self.init_bems_data["{}吸込温度".format(one["id"])])
             self.schedule.add(agent)
             self.grid.place_agent(agent, pos)

@@ -23,7 +23,7 @@ from controllers import error,env,functions
 # 出力先フォルダパス
 output_dir_path = "eval/result_2021_08_23/"
 # シミュレーション結果フォルダ
-out_simulation_result_dir = "out/result_2021_08_23_pos/"
+out_simulation_result_dir = "out/result_2021_08_23/"
 # 吸い込み評価用ファイルパス
 base_file_inhalt_path = "data/config_data/2021_08_14_27/base/all_bems_data5.csv"
 
@@ -157,7 +157,7 @@ def inhalation_temp_evaluation(out_file_path,output_dir,base_file_path):
     df_result.columns,extract_columns,setting_columns = rename_columns(df_base)
     df_merge = pd.merge(df_base, df_result, on='時間', how="right")
     try:
-        df_merge["外気温"] = df_base["5気温"].values
+        df_merge["外気温"] = df_base["外気温"].values
     except ValueError:
         df_merge["外気温"] = 0
 
