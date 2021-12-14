@@ -125,6 +125,7 @@ class Space(Agent):
         
         self.exchange_heat()
         self.natural_convection_heat()
+        if self.model.si
         self.output_space_agent()
 
 
