@@ -625,6 +625,7 @@ class AirConditioner(Agent):
 
     def step(self):
         if self.model.schedule.steps%60 == 0:
+            print("debug")
             self.read_control_data()
             self.switch_mode()
             # if self.mode != 0:
