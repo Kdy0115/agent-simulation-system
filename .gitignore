@@ -3,13 +3,14 @@ controllers/cvt/__pycache__/
 controllers/sml/inc/__pycache__/
 
 # config files
-config/
+#config/
 
 # Data files
 # bems/
 artisoc/
 .ipynb_checkpoints/
 out/
+data/src/
 # data/
 # *.json
 # *.csv

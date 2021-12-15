@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Thermal Environment Simulator</title>
+
+    <script type="text/javascript" src="/eel.js"></script>
 </head>
 <body>
     <!-- メニュー -->
@@ -23,9 +25,10 @@
         <input type="text" id="bems_folder_path" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
         <label>シミュレーション結果ファイルのパスを入力</label><br>
         <input type="text" id="result_of_simulation_file" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
+        <label>温度取りの結果ファイルのパスを入力</label><br>
+        <input type="text" id="temp_file" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
 
-        <button type='button' id="evaluation_button" onclick="evaluation();">評価を見る</button>
-
+        
         <div id="result">
             <h2>差分グラフ</h2>
             <div id="difference_graph"></div>
@@ -36,11 +39,14 @@
             <h3>範囲の終わりの時間</h3>
             <input type="datetime-local" id="end_time"><br>
 
-            <button type='button' id="mae_check_button" onclick="mae_check();">評価を見る</button>
+            <button type='button' id="print_evaluated_data_table" onclick="print_evaluated_data_table();">評価を見る</button>
 
             <h2>表</h2>
+            
             <div id="table"></div>
         </div>
     </div>
+
+<script type="text/javascript" src="js/evaluation.js"></script>
 </body>
 </html>
