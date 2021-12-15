@@ -12,6 +12,7 @@ import time
 import numpy as np
 import seaborn as sns
 from controllers import functions
+# import main
 
 global json_all_data
 
@@ -74,8 +75,8 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
         output_folder_path ([type]): [description]
     """    
     config_ini = configparser.ConfigParser()
-    config_ini.read('config/config_test.ini', encoding='utf-8')
-
+    config_ini.read('config/config.ini', encoding='utf-8')
+    print(start_time,end_time)
     config_ini["SIMULATION"]["start_time"] = start_time
     config_ini["SIMULATION"]["end_time"] = end_time
     config_ini["SIMULATION"]["output_folder_path"] = output_folder_path
@@ -85,7 +86,7 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
     config_ini["LAYOUT"]["lyaout_floor_file_path"] = lyaout_floor_file_path
     config_ini["LAYOUT"]["skeleton_file_path"] = skeleton_file_path
 
-    with open('config/config_test.ini', 'w',encoding="utf-8") as configfile:
+    with open('config/config.ini', 'w',encoding="utf-8") as configfile:
         # 指定したconfigファイルを書き込み
         config_ini.write(configfile,True)
     
@@ -93,12 +94,14 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
     
 #################################################################################
 # シミュレーション実行用サーバー側プログラム                                    #
-#################################################################################    
+#################################################################################
 
 @eel.expose
 def start_simulation():
     print("シミュレーションを実行します")
     subprocess.run('py main.py', shell=True)
+    # running = main.RunningStatus()     
+    # main.main(running)
 
 @eel.expose
 def stop_simulation():

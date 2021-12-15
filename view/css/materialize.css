@@ -4894,6 +4894,7 @@ small {
 
 .card .card-content p {
   margin: 0;
+  margin-left: 3%;
 }
 
 .card .card-content .card-title {

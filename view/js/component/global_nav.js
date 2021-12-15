@@ -11,14 +11,14 @@ globalMenu = `
   <li><a href="#">ヘルプ</a></li>
 </ul>
 <nav>
-  <div class="nav-wrapper">
-    <a href="${INDEXLINK}" class="brand-logo">BEMS温度シミュレータ</a>
+  <div class="nav-wrapper blue">
+    <a href="${INDEXLINK}" class="brand-logo"><strong>BEMS温度シミュレーション</strong></a>
     <ul class="right hide-on-med-and-down">
-      <li><a href="${INDEXLINK}">設定</a></li>
-      <li><a href="${SIMULATIONLINK}">シミュレーション</a></li>
-      <li><a href="${EVALUATIONLINK}">評価</a></li>
-      <li><a href="${LAYOUTLINK}">レイアウト設定</a></li>
-      <li><a class="dropdown-trigger" href="#!" data-target="dropdown1">ドキュメント<i class="material-icons right">arrow_drop_down</i></a></li>
+      <li><a href="${INDEXLINK}"><strong>設定</strong></a></li>
+      <li><a href="${SIMULATIONLINK}"><strong>シミュレーション</strong></a></li>
+      <li><a href="${EVALUATIONLINK}"><strong>評価</strong></a></li>
+      <li><a href="${LAYOUTLINK}"><strong>レイアウト設定</strong></a></li>
+      <li><a class="dropdown-trigger" href="#!" data-target="dropdown1"><strong>ドキュメント</strong><i class="material-icons right">arrow_drop_down</i></a></li>
     </ul>
   </div>
 </nav>
