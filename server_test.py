@@ -1,4 +1,3 @@
-#!python3.5
 import eel
 import configparser
 import subprocess
@@ -50,7 +49,7 @@ def config_import():
 @eel.expose
 def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_floor_file_path,skeleton_file_path,heat_source_file_path,output_folder_path):
     config_ini = configparser.ConfigParser()
-    config_ini.read('config/config_test.ini', encoding='utf-8')
+    config_ini.read('config/config.ini', encoding='utf-8')
 
     config_ini["SIMULATION"]["start_time"] = start_time
     config_ini["SIMULATION"]["end_time"] = end_time
@@ -62,7 +61,7 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
     config_ini["LAYOUT"]["skeleton_file_path"] = skeleton_file_path
     #config_ini["CALCULATION"]["multiprocess"] = 'False'
 
-    with open('config/config_test.ini', 'w',encoding="utf-8") as configfile:
+    with open('config/config.ini', 'w',encoding="utf-8") as configfile:
         # 指定したconfigファイルを書き込み
         config_ini.write(configfile,True)
     
