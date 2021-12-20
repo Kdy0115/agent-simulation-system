@@ -6,7 +6,7 @@ on:
   #-- mainブランチにpushされたら起動する --#
   push:
     branches:
-      - develop_ver4
+      - develop_ver5
 
 #-------------------------#
 # 環境変数
