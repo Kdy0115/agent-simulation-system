@@ -1,0 +1,33 @@
+/****************************************************/
+/* index.htmlコンテンツ内へのCSS                    */
+/****************************************************/
+.configure-card .row{
+    margin-top: 3%;
+    margin-left: 3%;
+    margin-right:3%;
+}
+
+
+.card-content{
+    margin-left: 4%;
+    padding: 36px;
+}
+
+.setting-form{
+    margin-top: 3%;
+    margin-right: 8%;
+    margin-left: 8%;
+}
+
+.preview-setting{
+    margin-top: 5%;
+    margin-left: 3%;
+}
+
+.config-save .row a{
+    margin-bottom: 5%;
+}
+
+.card-content input{
+    margin-bottom: 5%;
+}

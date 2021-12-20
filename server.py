@@ -7,7 +7,7 @@ import os
 import json
 import glob
 # ユーザー定義ファイル
-import main
+# import main
 
 eel.init('view',allowed_extensions=['.js','.html','.css'])
 

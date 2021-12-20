@@ -275,6 +275,8 @@ for key,value in data_all.items():
     floors_control_data = {}
     floors_init_bems_data = {}
     bems_columns, control_columns = select_columns(value)
+    print(bems_columns)
+    exit()
     floors_data[key] = value
     floors_control_data[key] = value[control_columns]
     floors_init_bems_data[key] = value[bems_columns]

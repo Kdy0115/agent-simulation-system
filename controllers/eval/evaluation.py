@@ -21,7 +21,7 @@ from controllers import error,env,functions
 
 
 # 出力先フォルダパス
-output_dir_path = "eval/result_2021_08_23/"
+output_dir_path = "eval/result_2021_08_22/"
 # シミュレーション結果フォルダ
 out_simulation_result_dir = "out/result_2021_08_23/"
 # 吸い込み評価用ファイルパス
@@ -30,7 +30,7 @@ base_file_inhalt_path = "data/config_data/2021_08_14_27/base/all_bems_data5.csv"
 # 温度取りデータ評価用ファイル
 observe_file_path = "data/config_data/observe/all/observe1.csv"
 # 温度取りデータ位置座標ファイルパス
-position_data = "data/config_data/observe/position.json"
+position_data = "data/layout/position.json"
 
 # 読み込む吸い込み用シミュレーション結果ファイル
 out_file_path = '{}cmp/result5.csv'.format(out_simulation_result_dir)
@@ -196,15 +196,15 @@ def create_observe_graphe(df,column,dir_path):
     
     y2 = df[str(column)+"_予測値"]
     
-    ax.plot(x,y1,label="実測値")
-    ax.plot(x,y2,label="予測値")
+    ax.plot(x,y1,label="Observation value")
+    ax.plot(x,y2,label="Predicted value")
     
     ax.xaxis.set_major_locator(ticker.FixedLocator(x_label_time))
 
     ax.set_xticklabels(x_label_id)
-    ax.set_title("温度取り{}番比較結果".format(column),fontsize=24)
-    ax.set_xlabel("時間[min]",fontsize=24)
-    ax.set_ylabel("温度[℃]",fontsize=24)
+    ax.set_title("Result of observe temp number{}".format(column),fontsize=24)
+    ax.set_xlabel("time[min]",fontsize=24)
+    ax.set_ylabel("temp[℃]",fontsize=24)
     ax.set_ylim([min_temp,max_temp])
     ax.legend(loc='upper left',fontsize=24)
 

@@ -24,6 +24,9 @@ jobs:
     #-- 仮想マシンのOSを指定（ここではUbuntuの最新版） --#
     runs-on: ubuntu-latest
     steps:
+      # #-- Gitリポジトリの内容を取得 --#
+      # - name: Checkout
+      #   uses: actions/checkout@v2
 
       #-- Slack通知 --#
       - name: Slack Notification on Success

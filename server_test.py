@@ -20,6 +20,7 @@ from controllers import error,env,functions
 import numpy as np
 import seaborn as sns
 from controllers import functions
+# import main
 
 global json_all_data
 
@@ -83,7 +84,6 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
     """    
     config_ini = configparser.ConfigParser()
     config_ini.read('config/config.ini', encoding='utf-8')
-
     config_ini["SIMULATION"]["start_time"] = start_time
     config_ini["SIMULATION"]["end_time"] = end_time
     config_ini["SIMULATION"]["output_folder_path"] = output_folder_path
@@ -101,12 +101,14 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
     
 #################################################################################
 # シミュレーション実行用サーバー側プログラム                                    #
-#################################################################################    
+#################################################################################
 
 @eel.expose
 def start_simulation():
     print("シミュレーションを実行します")
     subprocess.run('py main.py', shell=True)
+    # running = main.RunningStatus()     
+    # main.main(running)
 
 @eel.expose
 def stop_simulation():
@@ -279,9 +281,11 @@ def inhalation_temp_evaluation(out_file_path,base_file_path):
             
     df_merge = df_merge[extract_arr]
     
-    df_format = dict(df_merge)
+    df_format = df_merge.to_dict()
+    
     print(df_format)
     return df_format
+    #return list(df_format['5f0温度差分'].values)
     #df_merge.to_csv(output_dir+"result.csv",encoding=env.glbal_set_encoding)
     
 
@@ -337,7 +341,7 @@ def observe_temp_evaluation(observe_data,simulation_data,position_data):
     
     #print(df_merge["596_予測値"])
 
-    return df_merge    
+    return dict(df_merge)
     #df_merge.to_csv(dir_path+"result.csv",encoding=env.glbal_set_encoding)
         
 
@@ -371,6 +375,10 @@ def data_evaluation(out_file,observe_file,simulation_file,position,observe_flag,
 
 
 
+
+#################################################################################
+# レイアウト描画用サーバー側プログラム                                          #
+#################################################################################
 
 #################################################################################
 # レイアウト描画用サーバー側プログラム                                          #

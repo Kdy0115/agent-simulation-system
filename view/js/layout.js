@@ -384,3 +384,6 @@ function importLayoutFiles(){
     importFiles();
 }
 
+$(document).ready(function(){
+  $('.datepicker').datepicker();
+});
