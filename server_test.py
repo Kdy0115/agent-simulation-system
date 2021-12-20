@@ -1,4 +1,3 @@
-#!python3.5
 import eel
 import configparser
 import subprocess
@@ -7,11 +6,21 @@ import sys
 import os
 import json
 import glob
-import time
+#import time
+import pandas as pd
+from datetime import datetime as dt
+
+
+sys.path.append(os.getcwd())
+
+# utils
+from controllers import error,env,functions
+
 
 import numpy as np
 import seaborn as sns
 from controllers import functions
+# import main
 
 global json_all_data
 
@@ -74,8 +83,7 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
         output_folder_path ([type]): [description]
     """    
     config_ini = configparser.ConfigParser()
-    config_ini.read('config/config_test.ini', encoding='utf-8')
-
+    config_ini.read('config/config.ini', encoding='utf-8')
     config_ini["SIMULATION"]["start_time"] = start_time
     config_ini["SIMULATION"]["end_time"] = end_time
     config_ini["SIMULATION"]["output_folder_path"] = output_folder_path
@@ -85,7 +93,7 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
     config_ini["LAYOUT"]["lyaout_floor_file_path"] = lyaout_floor_file_path
     config_ini["LAYOUT"]["skeleton_file_path"] = skeleton_file_path
 
-    with open('config/config_test.ini', 'w',encoding="utf-8") as configfile:
+    with open('config/config.ini', 'w',encoding="utf-8") as configfile:
         # 指定したconfigファイルを書き込み
         config_ini.write(configfile,True)
     
@@ -93,12 +101,14 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
     
 #################################################################################
 # シミュレーション実行用サーバー側プログラム                                    #
-#################################################################################    
+#################################################################################
 
 @eel.expose
 def start_simulation():
     print("シミュレーションを実行します")
     subprocess.run('py main.py', shell=True)
+    # running = main.RunningStatus()     
+    # main.main(running)
 
 @eel.expose
 def stop_simulation():
@@ -137,6 +147,9 @@ def open_json(path):
     print(path)
     global json_all_data
     path += 'result5.json'
+
+    #path = 'out/test_result.json'
+
     json_open = open(path, 'r')
     json_all_data = json.load(json_open)
 
@@ -144,19 +157,19 @@ def open_json(path):
 @eel.expose
 def import_result_data(number):
     global json_all_data
-    start = time.time()
+    #start = time.time()
     #print(path)
     
     data = json_all_data
-    open_time = time.time()-start
-    print("open_time = ",open_time)
+    #open_time = time.time()-start
+    #print("open_time = ",open_time)
     #print(data[number]["agent_list"][100]["temp"])
     data_x = []
     data_y = []
     data_z = []
     data_temp = []
     #need_data = []
-    start1 = time.time()
+    #start1 = time.time()
     for i in range(len(data[number]["agent_list"])):
         if data[number]["agent_list"][i]["class"] == "space":
             data_x.append(data[number]["agent_list"][i]["x"])
@@ -165,8 +178,8 @@ def import_result_data(number):
             data_temp.append(data[number]["agent_list"][i]["temp"])
             #need_data.append(data[0]["agent_list"][i])
 
-    sort_time = time.time()-start1
-    print("sort_time = ",sort_time)
+    #sort_time = time.time()-start1
+    #print("sort_time = ",sort_time)
     return data_x,data_y,data_z,data_temp
 
 @eel.expose
@@ -175,34 +188,22 @@ def import_result_data_for_graph(path,x,y,z):
     
     data = json_all_data
     data_temp = []
-    print(x)
-    print(type(x))
+
     x = int(x)
     y = int(y)
     z = int(z)
-    print(type(x))
+
     id = 0
-    print(data[0]["agent_list"][11]["x"])
-    print(type(data[0]["agent_list"][11]["x"]))
-    if data[0]["agent_list"][11]["x"] == x:
-        print("あってる")
-    else:
-        print("違う。")
-    print(data[0]["agent_list"][11]["id"])
+
     for i in range(len(data[0]["agent_list"])):
         if data[0]["agent_list"][i]["x"] == x and data[0]["agent_list"][i]["y"] == y and data[0]["agent_list"][i]["z"] == z:
             id = data[0]["agent_list"][i]["id"]
-            print("ok")
-            #break
 
-    print(id)
 
     for i in range(len(data[0]["agent_list"])):
         for k in range(len(data)):
             if data[k]["agent_list"][i]["id"] == id:
                 data_temp.append(data[k]["agent_list"][i]["temp"])
-
-    print(data_temp)
 
     return data_temp
 
@@ -210,18 +211,176 @@ def import_result_data_for_graph(path,x,y,z):
 
 
 
+@eel.expose
+def rename_columns(df):
+    """ 必要なカラムだけを抽出する関数
+
+    Args:
+        df [DataFrame]: 評価を行うDataFrame型のデータ
+
+    Returns:
+        df_new_columns  [array]: 出力用の新しいカラム
+        columns         [array]: 元のデータのカラムで吸込温度のみ
+        setting_columns [array]: 設定温度のカラム
+    """    
+    
+    df_new_columns = ["時間"]
+    setting_columns = []
+    columns = []
+    for i in df.columns:
+        # 吸込温度のみを抽出
+        if "吸込温度" in i:
+            df_new_columns.append(i+"_予測")
+            columns.append(i)
+        # 設定温度のみを抽出
+        elif "設定温度" in i:
+            setting_columns.append(i)
+
+    return df_new_columns,columns,setting_columns
+
 
 @eel.expose
-def print_heatmap(data):
-    print("ヒートマップを出力します。")
-    sns.heatmap(data)
-    print("ヒートマップを出力出来ました？")
+def inhalation_temp_evaluation(out_file_path,base_file_path):
+    """ 吸込温度側評価用関数
 
-    np.random.seed(0)
-    uniform_data = np.random.rand(10, 12)
-    sns.heatmap(uniform_data)
-    print("ヒートマップを出力出来ました？？")
+    Args:
+        out_file_path [str] : シミュレーション結果ファイル（BEMS補完用）
+        
+    """
+    
+    floor = out_file_path.split(".")[0][-1]
 
+    df_result = pd.read_csv(out_file_path,encoding="shift-jis")
+
+    time = df_result.iloc[0]["時間"]
+    dt_time = dt.strptime(time, '%Y-%m-%d %H:%M:%S')
+
+    # base_dir = "data/evaluation/base/{0}_{1}_{2}/".format(dt_time.year,dt_time.month,dt_time.day)
+    # base_dir = "data/sample_data2/base/"
+    base_file_path = base_file_path
+
+    df_base = pd.read_csv(base_file_path,encoding="shift-jis")
+    df_result.columns,extract_columns,setting_columns = rename_columns(df_base)
+    df_merge = pd.merge(df_base, df_result, on='時間', how="right")
+    '''
+    try:
+        df_merge["外気温"] = df_base["外気温"].values
+    except ValueError:
+        df_merge["外気温"] = 0
+    '''
+
+    #output_dir += "inhalation/"
+    
+    df_merge["5f0温度差分"] = df_merge["5f0吸込温度"] - df_merge["5f0吸込温度_予測"]
+    df_merge["5f2温度差分"] = df_merge["5f2吸込温度"] - df_merge["5f2吸込温度_予測"]
+    
+    extract_arr = []
+    for i in df_merge.columns:
+        if '温度差分' in i or '時間' in i:
+            extract_arr.append(i)
+            
+    df_merge = df_merge[extract_arr]
+    
+    df_format = df_merge.to_dict()
+    
+    print(df_format)
+    return df_format
+    #return list(df_format['5f0温度差分'].values)
+    #df_merge.to_csv(output_dir+"result.csv",encoding=env.glbal_set_encoding)
+    
+
+@eel.expose
+def observe_temp_evaluation(observe_data,simulation_data,position_data):
+    """ 温度取り評価用関数
+
+    Args:
+        observe_data [str]      : 評価用観測温度データのファイルパス（csv）
+        simulation_data [str]   : シミュレーション結果ファイルパス（jsonのエージェントデータ）
+        position_data [str]     : 温度取り位置座標データのファイルパス（json）
+        output_dir [str]        : 出力先フォルダパス
+    """    
+    df_observe = pd.read_csv(observe_data,encoding="shift-jis")
+    json_open = open(simulation_data, 'r')
+    json_load = json.load(json_open)
+
+    json_position = open(position_data, 'r')
+    json_load_position = json.load(json_position)
+    
+    find_id_arr = json_load[0]["agent_list"]
+    
+    # 温度取りの座標と一致する空間を取得
+    observe_space_id_arr = []
+    for i in json_load_position:
+        sensor_id,x,y,z = i["id"],i["x"],i["y"],i["z"]
+        for agent in find_id_arr:
+            if agent["class"] == "space":
+                if (agent["x"] == x) and (agent["y"] == y) and (agent["z"] == z):
+                    observe_space_id_arr.append((sensor_id,agent["id"]))
+                    
+                    
+    columns = [str(i[0])+"_予測値" for i in observe_space_id_arr]
+    columns.append("時間")
+    result_df = pd.DataFrame(data=[],columns=columns)
+    
+    base_columns = list(result_df.columns)
+    for per_time_data in json_load:
+        time = per_time_data["timestamp"]
+        row = [0] * len(base_columns)
+        for agent in per_time_data["agent_list"]:
+            for space in observe_space_id_arr:
+                if agent["id"] == space[1]:
+                    row[base_columns.index("{}_予測値".format(space[0]))] = agent["temp"]
+        row[-1] = time
+        result_df.loc[len(result_df)] = row
+        
+    df_merge = pd.merge(result_df,df_observe,on="時間",how="left")
+    #dir_path = output_dir + "observe/"
+    #os.makedirs(dir_path,exist_ok=True)
+    #df_marge = dict(df_marge)
+        
+    #print(df_merge["596_予測値"])
+
+    df_merge = df_merge.to_dict()
+    print(df_merge)
+
+    return df_merge
+    #df_merge.to_csv(dir_path+"result.csv",encoding=env.glbal_set_encoding)
+        
+
+@eel.expose
+def data_evaluation(out_file,observe_file,simulation_file,position,observe_flag,base_file_path):
+    """ メイン関数
+
+    Args:
+        out_file [str]          : シミュレーション結果ファイル（BEMS補完用）
+        observe_file [str]      : 評価用観測温度データのファイルパス（csv）
+        simulation_file [str]   : シミュレーション結果ファイルパス（jsonのエージェントデータ）
+        position [str]          : 温度取り位置座標データのファイルパス（json）
+        observe_flag [bool]     : 温度取りデータで評価するかのフラグ
+        output_dir [str]        : 出力先フォルダパス 使わなくなった
+        base_file_path          : エアコンの吸い込み温度
+    """    
+    
+    # 吸込温度側評価
+    df_format = inhalation_temp_evaluation(out_file,base_file_path)
+    # 温度取りデータ評価
+    if observe_flag:
+        evaluated_data=observe_temp_evaluation(observe_file,simulation_file,position)
+        evaluated_data = dict(evaluated_data)
+        print(df_format)
+        print("--------------------------------------------")
+        print(evaluated_data['596_予測値'])
+        print(type(df_format))
+        print(type(evaluated_data))
+        return df_format,evaluated_data
+
+
+
+
+
+#################################################################################
+# レイアウト描画用サーバー側プログラム                                          #
+#################################################################################
 
 #################################################################################
 # レイアウト描画用サーバー側プログラム                                          #

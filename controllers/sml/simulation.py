@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 """ シミュレーション制御モジュール
 """
 
@@ -75,7 +76,7 @@ class SimulationControl():
         """        
         
         # コンソールに出力する文字列
-        info = f'プロセス#{i:>2} '
+        #info = f'プロセス#{i:>2} '
         for _ in tqdm(range(self.simulation_step), desc=info,position=i):
             if model.terminate:
                 break

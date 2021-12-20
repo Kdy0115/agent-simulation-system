@@ -46,6 +46,15 @@ async function next_heatmap(){
   heatmap();
 }
 
+async function movie_heatmap(){
+  console.log('動画再生');
+  i = 0;
+  while(i < 1440){
+    setTimeout(next_heatmap,5000);
+    i++;
+  }
+}
+
 
 function heatmap(){
   console.log("ヒートマップ作成開始")
@@ -154,3 +163,5 @@ async function print_graph(){
       options: options
   });
 }
+
+

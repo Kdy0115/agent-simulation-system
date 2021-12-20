@@ -196,4 +196,8 @@ def main(out_file,observe_file,simulation_file,position,observe_flag,output_dir,
 
 
 
+<<<<<<< HEAD
+main(out_file_path,observe_file_path,simulation_data,position_data,observe_evaluation,output_dir_path,base_file_path)
+=======
 main(out_file_path,observe_file_path,simulation_data,position_data,observe_evaluation,output_dir_path,base_file_inhalt_path)
+>>>>>>> 15f88fd5dbd65edfcb00e9c7da4909e32a7b4193

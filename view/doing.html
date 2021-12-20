@@ -1,30 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Thermal Environment Simulator</title>
-
-    <link rel="stylesheet" href="heatmap.css"/>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
-    
-
-    <!-- eelを使用するため -->
-    <script type="text/javascript" src="/eel.js"></script>
-
-    
-</head>
+<!-- ヘッダーコンポーネントの読み込み-->
+<script type="text/javascript" src='js/component/header.js'></script>
 <body>
     <!-- メニュー -->
-    <nav>
-        <a href="index.html">環境設定</a>
-        
-        <a href="doing.html">シミュレーション</a>
-        
-        <a href="evaluation.html">評価</a>
+    <script type='text/javascript' src='js/component/global_nav.js'></script>
 
-        <a href="layout.html">レイアウト設定</a>
-    </nav>
+    <div id="content">
+        <div class="configure-card">
+            <div class="row">
+                <div class="col s12">
+                    <div class="card blue-grey white">    
+                        <div class="card-content grey-text text-darken-3">
+                            <span class="card-title">シミュレーション実行</span>
+                            <div class="row">
+                                <div class="col s9">
+                                    <div class="card grey lighten-3">
+                                        <div class="card-content grey-text text-darken-3">
+                                            <span class="card-title">シミュレーションを実行しています。(58%)</span>
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>                  
+    </div>
 
     <!-- 中身-->
     <div id="content">
@@ -79,7 +83,7 @@
             </div>
             <button type='button' id="previous_heatmap" onclick="previous_heatmap();">前へ</button>
             <button type='button' id="next_heatmap" onclick="next_heatmap();">次へ</button>
-
+            <button type='button' id="movie_heatmap" onclick="movie_heatmap();">動画として再生</button>
 
             
 
