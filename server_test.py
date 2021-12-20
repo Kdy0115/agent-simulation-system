@@ -1,3 +1,4 @@
+from multiprocessing import process
 import eel
 import configparser
 import subprocess
@@ -6,6 +7,7 @@ import sys
 import os
 import json
 import glob
+
 #import time
 import pandas as pd
 from datetime import datetime as dt
@@ -16,18 +18,21 @@ sys.path.append(os.getcwd())
 # utils
 from controllers import error,env,functions
 
+import time
+import subprocess
 
 import numpy as np
 import seaborn as sns
 from controllers import functions
-# import main
+# from main import main
 
 global json_all_data
-
 # ユーザー定義ファイル
 # import main
 
+process_arr = []    
 eel.init('view',allowed_extensions=['.js','.html','.css'])
+
 
 
 @eel.expose
@@ -84,6 +89,11 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
     """    
     config_ini = configparser.ConfigParser()
     config_ini.read('config/config.ini', encoding='utf-8')
+    
+    if len(start_time) <= 16:
+        start_time += ":00"
+    if len(end_time) <= 16:
+        end_time += ":00"
     config_ini["SIMULATION"]["start_time"] = start_time
     config_ini["SIMULATION"]["end_time"] = end_time
     config_ini["SIMULATION"]["output_folder_path"] = output_folder_path
@@ -106,22 +116,35 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
 @eel.expose
 def start_simulation():
     print("シミュレーションを実行します")
-    subprocess.run('py main.py', shell=True)
-    # running = main.RunningStatus()     
-    # main.main(running)
+    cmd = "python main.py"      # シェル実行のコマンド
+    p = subprocess.Popen(cmd)
+    process_arr.append(p)
+    
+    # thread1 = threading.Thread(target=main)
+    # thread1.start()
 
 @eel.expose
 def stop_simulation():
-    print('シミュレーションを停止します')
-    #subprocess.run()
-
-
+    for process in process_arr:
+        process.kill()
+    print('シミュレーションを停止しました')
+        
 
 @eel.expose
 def prepare_simulation():
     thread1 = threading.Thread(target=simulation)
     thread1.start()
     
+@eel.expose
+def import_log_file():
+    config_ini = configparser.ConfigParser()
+    config_ini.read('config/config.ini', encoding='utf-8')
+    file_path = config_ini["SIMULATION"]["output_folder_path"] + "log/progress.txt"
+    f = open(file_path, 'r')
+    data = (f.read()).split('\n')
+    f.close()
+    
+    return int(data[-2])
 
 @eel.expose
 def render_dir():
@@ -169,7 +192,7 @@ def import_result_data(number):
     data_z = []
     data_temp = []
     #need_data = []
-    #start1 = time.time()
+    start1 = time.time()
     for i in range(len(data[number]["agent_list"])):
         if data[number]["agent_list"][i]["class"] == "space":
             data_x.append(data[number]["agent_list"][i]["x"])
@@ -178,9 +201,10 @@ def import_result_data(number):
             data_temp.append(data[number]["agent_list"][i]["temp"])
             #need_data.append(data[0]["agent_list"][i])
 
-    #sort_time = time.time()-start1
-    #print("sort_time = ",sort_time)
-    return data_x,data_y,data_z,data_temp
+    min_temp,max_temp = min(data_temp),max(data_temp)
+    # sort_time = time.time()-start1
+    # print("sort_time = ",sort_time)
+    return data_x,data_y,data_z,data_temp,min_temp,max_temp
 
 @eel.expose
 def import_result_data_for_graph(path,x,y,z):
@@ -188,11 +212,8 @@ def import_result_data_for_graph(path,x,y,z):
     
     data = json_all_data
     data_temp = []
-
-    x = int(x)
-    y = int(y)
-    z = int(z)
-
+    
+    x,y,z = int(x),int(y),int(z)
     id = 0
 
     for i in range(len(data[0]["agent_list"])):
@@ -205,7 +226,9 @@ def import_result_data_for_graph(path,x,y,z):
             if data[k]["agent_list"][i]["id"] == id:
                 data_temp.append(data[k]["agent_list"][i]["temp"])
 
-    return data_temp
+    print(data_temp)
+
+    return data_temp,max(data_temp)+0.1,min(data_temp)-0.1
 
 
 

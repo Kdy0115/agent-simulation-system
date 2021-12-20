@@ -17,70 +17,93 @@
                                 <div class="col s9">
                                     <div class="card grey lighten-3">
                                         <div class="card-content grey-text text-darken-3">
-                                            <span class="card-title">シミュレーションを実行しています。(58%)</span>
-                                            
+                                            <span class="card-title"><div id="simulation-status">STARTでシミュレーション開始</div><input type="text" id="bar" value="0%" style="border-style: none" disabled="true"></span>
+                                            <div>
+                                                <!-- 進捗(%)を表示 -->
+                                                <!-- プログレスバー -->
+                                                <progress id="progress-bar" value="0" max="100">0%</progress>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="row">
+                                <a id="start_simulation_button" onclick="start_simulation();" class="waves-effect waves-light btn-large blue"><h5>START</h5></a>
+                            </div>
+                            <div class="row">
+                                <a id="stop_simulation_button" onclick="stop_simulation();" class="waves-effect waves-light btn-large red darken-1"><h5>STOP</h5></a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>                  
-    </div>
-
-    <!-- 中身-->
-    <div id="content">
-        <h1>シミュレーション</h1>
-        <div id = "log">
-            <h2>ログ</h2>
-
-
-            <button type='button' id="start_simulation_button" onclick="start_simulation();">実行</button>
-            <button type='button' id="stop_simulation_button" onclick="stop_simulation();">停止</button><br>
-
         </div>
-        <div id ="result">
-            <h2>結果</h2>
-            <h3>結果を表示するフロアを選択</h3>
-            <select name="floor_number">
-                <option value="floor1">1階</option>
-                <option value="floor2">2階</option>
-                <option value="floor3">3階</option>
-                <option value="floor4">4階</option>
-                <option value="floor5">5階</option>
-                <option value="floor6">6階</option>
-                <option value="floor7">7階</option>
-                <option value="floor8">8階</option>
-                <option value="floor9">9階</option>
-
-            </select>
-
-            <h2>ヒートマップ</h2>
-            <h3>ヒートマップ開始の時間</h3>
-            <input type="datetime-local" id="strat_time"><br>
-            <h3>ヒートマップ終了の時間</h3>
-            <input type="datetime-local" id="end_time"><br>
-            <h3>出力するヒートマップの高さ指定</h3>
-            <h3>高さを選択</h3>
-            <form name="heatmap_z_select">
-                <input type="radio" name="height" value="3">天井
-                <input type="radio" name="height" value="2">人の高さ
-                <input type="radio" name="height" value="1">床
-            </form>
-            
-            <button type='button' id="print_heatmap" onclick="print_heatmap();">ヒートマップを表示</button>
-<!--
-            <div style="height:400px; width:800px">
-                <canvas id="heatMap1"></canvas>
-            </div>
-
--->
-            <div class="demo-wrapper">
-                <div class="heatmap" id='heatmap'>
+        <div class="row">
+            <div class="col s12 m2 l5">
+                <div class="card blue-grey white">
+                    <div class="card-content grey-text text-darken-3">
+                        <span class="card-title">ヒートマップ</span>
+                        <p>シミュレーション結果のヒートマップを描画<br>開始/終了時間と高さを指定してください</p>
+                        <div class="heatmap-form">
+                            <label>開始日時</label><br>
+                            <input type="datetime-local" id="start_time" class="start-time" placeholder="5桁以内で入力"><br>
+                            <label>終了日時</label><br>
+                            <input type="datetime-local" id="finish_time" placeholder="5桁以内で入力"><br>
+                            <label>フロア選択</label><br>
+                            <input type="text" id="floor_number" placeholder="5桁以内で入力"><br>
+                            <label>高さ</label><br>
+                            <input type="text" id="heatmap-height" placeholder="5桁以内で入力"><br>                                                
+                            <div class="row">
+                                <a id="print_heatmap" onclick="print_heatmap();" class="waves-effect waves-light btn-large blue"><h5>出力</h5></a>
+                            </div>
+                            <div class="heat-map-canvas">
+                                <div class="heatmap" id='heatmap' style="position: relative; height: 900px; width: 1000px;"></div>
+                            </div>
+                            <div class="animation-control">
+                                <button type='button' id="previous_heatmap" onclick="previous_heatmap();">前へ</button>
+                                <button type='button' id="next_heatmap" onclick="next_heatmap();">次へ</button>                                
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+            <div class="col s12 m2 l5">
+                <div class="card blue-grey white">
+                    <div class="card-content grey-text text-darken-3">
+                        <span class="card-title">グラフ表示</span>
+                        <p>シミュレーション結果のグラフ化<br>時系列の温度グラフ<br>ヒートマップ上でクリックした座標の時系列グラフを出力します</p>
+                        <div class="graph-set">
+                            <ul id="graph-box" class="collapsible expandable">
+                                <li id="graph-box-list-0">
+                                  <div id="graph-box-header-0" class="collapsible-header">
+                                      グラフポイント
+                                  </div>
+                                  <div class="collapsible-body">
+                                      <div class="row">
+                                          <div class="col s12 m2 l4">
+                                              <label>x座標</label><br>
+                                              <input type="text" id="graph_x_0" placeholder="x座標">
+                                          </div>
+                                          <div class="col s12 m2 l4">
+                                              <label>y座標</label><br>
+                                              <input type="text" id="graph_y_0" placeholder="y座標"><br>
+                                          </div>
+                                          <div class="col s12 m2 l4">
+                                              <label>z座標</label><br>
+                                              <input type="text" id="graph_z_0" placeholder="z座標"><br>
+                                          </div>
+                                        <a id="print-graph-button" onclick="print_graph(0);" class="waves-effect waves-light btn-large blue"><h5>出力</h5></a>
+                                       </div>
+                                      <canvas id="graph_0"></canvas>
+                                  </div>
+                                </li>
+                              </ul>
+                            <a class="btn-floating btn-large waves-effect waves-light blue" onclick="createGraphBox();"><i class="material-icons">add</i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <button type='button' id="previous_heatmap" onclick="previous_heatmap();">前へ</button>
             <button type='button' id="next_heatmap" onclick="next_heatmap();">次へ</button>
             <button type='button' id="movie_heatmap" onclick="movie_heatmap();">動画として再生</button>
@@ -117,11 +140,7 @@
 
 
         </div>
-
-        
-
     </div>
-
 <script src="js/heatmap.min.js"></script>
 <script type="text/javascript" src="js/doing.js"></script>
 <!--

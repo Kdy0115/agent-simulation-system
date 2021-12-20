@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import time
 import multiprocessing as mp
+import os
 
 # utils
 from controllers.sml.model import *
@@ -36,6 +37,11 @@ class SimulationControl():
         self.dataset = post_data["simulation_data"]
         self.output_folder = post_data["output_folder"]
         self.dataclass = dataclass
+        
+        log_dir = self.output_folder+"log/"
+        os.makedirs(log_dir,exist_ok=True)
+        self.log_file_path = "{}progress.txt".format(log_dir)
+        self.create_log()
 
         for data in self.dataset:
             model = HeatModel(
@@ -50,10 +56,21 @@ class SimulationControl():
             )
             self.models_floor_dic[data["init_bems_data"]["floor"]] = model
 
-
+    def create_log(self):
+        """ ログファイルを作成するメソッド
+        """
+        f = open(self.log_file_path, 'w')
+        f.close()
+        
+    def write_log(self,progress):
+        """ ログファイルを書き込むメソッド
+        """        
+        f = open(self.log_file_path,'a')
+        f.write('{}\n'.format(progress))
+        f.close()
 
     def _str_simulation_state(self):
-        """ シミュレーション実行開始内容をコンソールに表示するモジュール
+        """ シミュレーション実行開始内容をコンソールに表示するメソッド
         """        
         
         print("Simulation starts")
@@ -98,22 +115,27 @@ class SimulationControl():
         start = time.time()
         self._str_simulation_state()
         result_arr = []
+        n = 0
         for key,model in self.models_floor_dic.items():
             for i in tqdm(range(self.simulation_step+1)):
                 if model.terminate:
                     break
                 else:
+                    progress = i/ (self.simulation_step+1) * 100
+                    if int(progress) == int(n):
+                        self.write_log(int(progress))
+                        n += 1
                     model.step()
                     if (self.dataclass.bach == False) and (i%60 == 0):
                         self.dataclass.per_output_data(key,model.spaces_agents_list[-1],i)
             if self.dataclass.bach == True:
                 result_arr.append((key,model.spaces_agents_list))
+        self.write_log(int(progress)+1)                
         elapsed_time = time.time() - start
         print("Simulation finished!")
         print("Simulation time:{}".format(int(elapsed_time)) + "[sec]")
 
         return result_arr
-    
     
 
     def run_all_simulations_multi_process(self) -> dict:

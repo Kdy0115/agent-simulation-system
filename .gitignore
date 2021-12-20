@@ -3,9 +3,9 @@ controllers/cvt/__pycache__/
 controllers/sml/inc/__pycache__/
 
 # config files
-config/
 Pipfile
 Pipfile.lock
+.python-version
 
 # Data files
 # bems/
@@ -27,6 +27,7 @@ ubuntu-xenial-16.04-cloudimg-console.log
 # Documents
 docs/
 
+data/
 # License
 LICENSE
 
@@ -38,6 +39,7 @@ LICENSE
 
 # bemsfile
 source/
+eval/
 bems/
 
 # evaluation file
@@ -45,3 +47,9 @@ bems/
 
 # Readme file
 README.md
+
+#Docker file
+analysis.ipynb
+prototype.ipynb
+docker-compose.yml
+Dockerfile

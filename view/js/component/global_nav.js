@@ -17,7 +17,6 @@ globalMenu = `
       <li><a href="${INDEXLINK}"><strong>設定</strong></a></li>
       <li><a href="${SIMULATIONLINK}"><strong>シミュレーション</strong></a></li>
       <li><a href="${EVALUATIONLINK}"><strong>評価</strong></a></li>
-      <li><a href="${LAYOUTLINK}"><strong>レイアウト設定</strong></a></li>
       <li><a class="dropdown-trigger" href="#!" data-target="dropdown1"><strong>ドキュメント</strong><i class="material-icons right">arrow_drop_down</i></a></li>
     </ul>
   </div>

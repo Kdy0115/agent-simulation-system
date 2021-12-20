@@ -124,7 +124,6 @@ class Space(Agent):
         
         self.exchange_heat()
         self.natural_convection_heat()
-        
         self.output_space_agent()
 
 
@@ -748,7 +747,7 @@ class HeatModel(Model):
             [bool]: True->被っている False->被っていない
         """        
         for ac_pos in self.init_ac_coordinate_arr:
-            if (ac_pos[0] == pos[0]) and (ac_pos[1] == pos[1]) and (ac_pos[2] == ac_pos[2]):
+            if (ac_pos[0] == pos[0]) and (ac_pos[1] == pos[1]) and (ac_pos[2] == pos[2]):
                 return True
         return False
         
@@ -925,13 +924,11 @@ class HeatModel(Model):
                 base_id = self.ac_agents_list[distance_arr.index(min(distance_arr))].ac_id
                 temp = self.init_bems_data["{}吸込温度".format(base_id)]
                 # 真ん中より窓際でかつ人の高さより低ければ外気温との平均をとる
-                '''
-                if z_i < 3 and x_i < 10:
-                    agent.temp = (temp + self.out_temp) / 2
-                else:
-                    agent.temp = temp
-                '''
                 agent.temp = temp
+                # if z_i < 3 and x_i < 10:
+                #     agent.temp = (temp + self.out_temp) / 2
+                # else:
+                #     agent.temp = temp
 
     def check_next_bems_data(self):
         """ 次のBEMSデータが存在するかチェックするメソッド
