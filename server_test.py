@@ -337,11 +337,13 @@ def observe_temp_evaluation(observe_data,simulation_data,position_data):
     #dir_path = output_dir + "observe/"
     #os.makedirs(dir_path,exist_ok=True)
     #df_marge = dict(df_marge)
-    print(df_merge)
-    
+        
     #print(df_merge["596_予測値"])
 
-    return dict(df_merge)
+    df_merge = df_merge.to_dict()
+    print(df_merge)
+
+    return df_merge
     #df_merge.to_csv(dir_path+"result.csv",encoding=env.glbal_set_encoding)
         
 
