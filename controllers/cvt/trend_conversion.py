@@ -6,13 +6,13 @@ import datetime
 import os
 
 
-trend_data_file_path = 'data/src/TREND_76_6904050_20210814_20210827_20210828183418.xlsx'
+trend_data_file_path = 'docs/src/TREND_76_6904050_20211120_20211126_20211130232043.xlsx'
 
-df = pd.read_excel(trend_data_file_path,encoding="shift-jis")
+df = pd.read_excel(trend_data_file_path)
 
-all_data_dir_path = "data/config_data/base/"
-control_data_dir_path = "data/config_data/control/"
-init_bems_data_dir_path = "data/config_data/init_bems/"
+all_data_dir_path = "data/config_data/2021_11_20_26/base/"
+control_data_dir_path = "data/config_data/2021_11_20_26/control/"
+init_bems_data_dir_path = "data/config_data/2021_11_20_26/init_bems/"
 
 # floors = [4,5]
 floors = [5]
@@ -113,7 +113,7 @@ key_map_floor_dict = {
         "5f9運転モード":"C5F 事務室東南 PAC_運転モード",
         "5f9風速":"C5F 事務室東南 PAC_風速",
         "5f9吸込温度":"C5F 事務室東南 PAC_吸込温度",
-        "5気温":"B館 RF 外気温度"
+        "外気温":"B館 RF 外気温度"
     },
 6:{
         "時間":"信号名称",
@@ -276,7 +276,6 @@ for key,value in data_all.items():
     floors_init_bems_data = {}
     bems_columns, control_columns = select_columns(value)
     print(bems_columns)
-    exit()
     floors_data[key] = value
     floors_control_data[key] = value[control_columns]
     floors_init_bems_data[key] = value[bems_columns]

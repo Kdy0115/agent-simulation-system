@@ -31,6 +31,9 @@ if(currentURL == 'index.html'){
         <script type='text/javascript' src='/eel.js'></script>
         <link rel="stylesheet" href="css/common/header.css"/>
         <link rel="stylesheet" href="css/materialize.css">
+        <link rel="stylesheet" href="css/doing.css">
+        <link rel="stylesheet" href="css/common/load.css">
+        <script src="js/progress.js"></script>
         <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
@@ -45,17 +48,17 @@ if(currentURL == 'index.html'){
     headerDefine = `
     <head>
         <meta charset='UTF-8'>
-        <title>${titleEvaluation}</title>
-
+        <title>${titleIndex}</title>
         <script type='text/javascript' src='/eel.js'></script>
-        <link rel="stylesheet" href="css/index.css"/>
-        <link rel="stylesheet" href="css/materialize.css">
         <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+        <script src="https://unpkg.com/three@0.131.3/build/three.min.js"></script>
+        <script src="https://unpkg.com/three@0.131.3/examples/js/controls/OrbitControls.js"></script>        
         <link rel="stylesheet" href="css/common/header.css"/>
-    </head>
+        <link rel="stylesheet" href="css/index.css"/>
+        <link rel="stylesheet" href="css/materialize.css">    
 `;
 } else if(currentURL == 'layout.html'){
     headerDefine = `

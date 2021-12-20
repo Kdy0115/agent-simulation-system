@@ -21,26 +21,32 @@ async function save_setting(){
 
     //var setting_input = document.querySelectorAll('input');
     //console.log(setting_input[0].value);
-
-    var start_time = document.getElementById("start_time");
-    var finish_time = document.getElementById("finish_time");
-
-    var bems_folder_path = document.getElementById("bems_folder_path");
-    var control_folder_path = document.getElementById("control_folder_path");
-
-    for (let j = 0; j < i; j++){
-        eval("var layout_input_folder_path" + j + "= document.getElementById('layout_input_folder_path"+j+"');" );
-        eval("var skeleton_layout_input_folder_path" + j + "= document.getElementById('skeleton_layout_input_folder_path"+j+"');" );
-        eval("var hot_position_folder_path" + j + "= document.getElementById('hot_position_folder_path"+j+"');" );
-
+    var res = confirm("変更を保存しますか？");
+    if( res == true ) {
+      var start_time = document.getElementById("start_time");
+      var finish_time = document.getElementById("finish_time");
+  
+      var bems_folder_path = document.getElementById("bems_folder_path");
+      var control_folder_path = document.getElementById("control_folder_path");
+  
+      for (let j = 0; j < i; j++){
+          eval("var layout_input_folder_path" + j + "= document.getElementById('layout_input_folder_path"+j+"');" );
+          eval("var skeleton_layout_input_folder_path" + j + "= document.getElementById('skeleton_layout_input_folder_path"+j+"');" );
+          eval("var hot_position_folder_path" + j + "= document.getElementById('hot_position_folder_path"+j+"');" );
+  
+      }
+      
+      var output_folder_path = document.getElementById("output_folder_path");
+      setting_check();
+      start_time = start_time.value.replace('T',' ');
+      finish_time = finish_time.value.replace('T',' ');
+  
+      await eel.configure_save(start_time,finish_time,bems_folder_path.value,control_folder_path.value,layout_input_folder_path0.value,skeleton_layout_input_folder_path0.value,hot_position_folder_path0.value,output_folder_path.value)();      
     }
-    
-    var output_folder_path = document.getElementById("output_folder_path");
-    setting_check();
-    start_time = start_time.value.replace('T',' ') + ":00";
-    finish_time = finish_time.value.replace('T',' ') + ":00";
-
-    await eel.configure_save(start_time,finish_time,bems_folder_path.value,control_folder_path.value,layout_input_folder_path0.value,skeleton_layout_input_folder_path0.value,hot_position_folder_path0.value,output_folder_path.value)();
+    else {
+        alert("変更をキャンセルしました");
+        first_read();
+    }
 }
 
 function createSelectBox(options,id){
