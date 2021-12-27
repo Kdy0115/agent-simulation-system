@@ -62,6 +62,13 @@
                             <div class="animation-control">
                                 <button type='button' id="previous_heatmap" onclick="previous_heatmap();">前へ</button>
                                 <button type='button' id="next_heatmap" onclick="next_heatmap();">次へ</button>                                
+                                <button type='button' id="movie_heatmap" onclick="movie_heatmap();">動画として再生</button>
+                                <input type="range" id="inputSlideBar" min="0" max="100" step="1">
+                                <a class="btn-floating btn-large waves-effect waves-light blue" onclick="playHeatMap();"><i class="material-icons">skip_previous</i></a>
+                                <a class="btn-floating btn-large waves-effect waves-light blue" onclick="playHeatMap();"><i class="material-icons">play_arrow</i></a>
+                                <a class="btn-floating btn-large waves-effect waves-light blue" onclick="playHeatMap();"><i class="material-icons">forward_5</i></a>
+                                <a class="btn-floating btn-large waves-effect waves-light blue" onclick="playHeatMap();"><i class="material-icons">pause</i></a>
+                                <a class="btn-floating btn-large waves-effect waves-light blue" onclick="playHeatMap();"><i class="material-icons">replay_5</i></a>
                             </div>
                         </div>
                     </div>
@@ -103,42 +110,6 @@
                     </div>
                 </div>
             </div>
-            
-            <button type='button' id="previous_heatmap" onclick="previous_heatmap();">前へ</button>
-            <button type='button' id="next_heatmap" onclick="next_heatmap();">次へ</button>
-            <button type='button' id="movie_heatmap" onclick="movie_heatmap();">動画として再生</button>
-
-            
-
-            <h2>グラフを表示する数を指定</h2>
-            <select name="number_of_graph">
-                <option value="one">1個</option>
-                <option value="two">2個</option>
-                <option value="three">3個</option>
-                <option value="four">4個</option>
-                <option value="five">5個</option>
-                <option value="six">6個</option>
-                <option value="seven">7個</option>
-                <option value="eight">8個</option>
-                <option value="nine">9個</option>
-
-            </select>
-            <h3>高さを選択</h3>
-            <input type="radio" name="height" value="ceiling">天井
-            <input type="radio" name="height" value="person_height">人の高さ
-            <input type="radio" name="height" value="floor">床<br>
-
-            <h3>座標を選択</h3>
-            <input type="number" id="graph_x" maxlength="3" value="" placeholder="３から３０まで"><br>
-            <input type="number" id="graph_y" maxlength="3" value="" placeholder="３から９まで"><br>
-            <input type="number" id="graph_z" maxlength="3" value="" placeholder="１から３まで"><br>
-
-            <button type='button' id="print_graph" onclick="print_graph();">グラフを表示</button>
-            <h2>グラフ</h2>
-            <canvas id="graph"></canvas>
-            
-
-
         </div>
     </div>
 <script src="js/heatmap.min.js"></script>

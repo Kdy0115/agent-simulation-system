@@ -4,7 +4,11 @@ var number;
 var graphCurrentId = 0;
 var stopFlag = true;
 var simulationStatus = 0;
+var updateHeatmap = false;
 
+/*******************************************************************************/
+/* シミュレーション実行                                                        */
+/*******************************************************************************/
 function updateSimulationStatus(){
   if(simulationStatus == 0){
     var bar = document.getElementById("bar");
@@ -52,6 +56,10 @@ async function stop_simulation(){
   },3000);
 }
 
+/*******************************************************************************/
+/* ヒートマップ出力                                                            */
+/*******************************************************************************/
+
 async function print_heatmap(){
   var res = await eel.config_import()();
   output_folder_path = res[7];
@@ -82,19 +90,21 @@ async function previous_heatmap(){
 async function next_heatmap(){
   number = number + 1;
   data = await eel.import_result_data(number)();
-  console.log(data[0]);
-  console.log(data[1]);
-  
-  heatmap();
+  if (data.length == 0){
+    updateHeatmap = false;
+    clearInterval(interval);
+  } else {
+    heatmap();
+  }
+  // console.log(data[0]);
+  console.log("aiueo");
+  // console.log(data[1]);
 }
 
 async function movie_heatmap(){
   console.log('動画再生');
-  i = 0;
-  while(i < 1440){
-    setTimeout(next_heatmap,5000);
-    i++;
-  }
+  updateHeatmap = true;
+  interval = setInterval("next_heatmap()",500);
 }
 
 
@@ -155,6 +165,11 @@ function heatmap(){
   console.log("ヒートマップ作成完了")
 }
 
+// const inputSlideBarElement = document.getElementById('inputSlideBar');
+
+// inputSlideBarElement.addEventListener('change', function(){
+// 	console.log(inputSlideBarElement.value);//(例)console => 90
+// });
 /*******************************************************************************/
 /* グラフ出力                                                                  */
 /*******************************************************************************/

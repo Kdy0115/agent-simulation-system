@@ -176,7 +176,9 @@ def open_json(path):
     json_open = open(path, 'r')
     json_all_data = json.load(json_open)
 
-
+#################################################################################
+# ヒートマップ用関数                                                            #
+#################################################################################
 @eel.expose
 def import_result_data(number):
     global json_all_data
@@ -193,18 +195,21 @@ def import_result_data(number):
     data_temp = []
     #need_data = []
     start1 = time.time()
-    for i in range(len(data[number]["agent_list"])):
-        if data[number]["agent_list"][i]["class"] == "space":
-            data_x.append(data[number]["agent_list"][i]["x"])
-            data_y.append(data[number]["agent_list"][i]["y"])
-            data_z.append(data[number]["agent_list"][i]["z"])
-            data_temp.append(data[number]["agent_list"][i]["temp"])
-            #need_data.append(data[0]["agent_list"][i])
+    try:
+        for i in range(len(data[number]["agent_list"])):
+            if data[number]["agent_list"][i]["class"] == "space":
+                data_x.append(data[number]["agent_list"][i]["x"])
+                data_y.append(data[number]["agent_list"][i]["y"])
+                data_z.append(data[number]["agent_list"][i]["z"])
+                data_temp.append(data[number]["agent_list"][i]["temp"])
+                #need_data.append(data[0]["agent_list"][i])
 
-    min_temp,max_temp = min(data_temp),max(data_temp)
-    # sort_time = time.time()-start1
-    # print("sort_time = ",sort_time)
-    return data_x,data_y,data_z,data_temp,min_temp,max_temp
+        min_temp,max_temp = min(data_temp),max(data_temp)
+        # sort_time = time.time()-start1
+        # print("sort_time = ",sort_time)
+        return [data_x,data_y,data_z,data_temp,min_temp,max_temp]
+    except IndexError:
+        return []
 
 @eel.expose
 def import_result_data_for_graph(path,x,y,z):
