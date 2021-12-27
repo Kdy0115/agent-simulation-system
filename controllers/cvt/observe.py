@@ -23,18 +23,18 @@ from controllers import error,env,functions
 
 
 # 読み込むローデータファイルパス
-import_dir_path = "data/src/温度取り/温度とり2021年8月/"
+import_dir_path = "docs/src/温度取り/温度とり2021年12月/"
 # 出力先ファイルパス
-output_dir_path = "data/evaluation/observe/all/"
+output_dir_path = "data/config_data/observe/all/"
 # 出力用ファイル名
-output_file_name = "observe.csv"
+output_file_name = "observe3.csv"
 
 # 時間カラム名
 time_colummn_name = "date"
 # 省くカラム名のリスト
 exclude_words = ["ch","@"]
 # ファイルグループ数
-file_group_num = 4
+file_group_num = 5
 
 
 
@@ -103,7 +103,6 @@ def merge_rows(df_arr: list,start: int,end: int):
     Returns:
         result_df_arr [DataFrame]: マージしたDataFrame
     """    
-    
     result_df_arr = pd.merge(df_arr[start],df_arr[start+1],on="date")
     for i in range(start+2,end):
         result_df_arr = pd.merge(result_df_arr,df_arr[i],on="date")
@@ -134,6 +133,7 @@ def add_rows_data(df,df1):
 
 df_arr = []
 files = glob.glob("{}*.csv".format(import_dir_path))
+    
 for i in files:
     try:
         df = pd.read_csv(i,encoding="shift-jis",header=2)

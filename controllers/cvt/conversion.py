@@ -15,7 +15,6 @@ import glob
 import sys
 
 # utils
-from controllers.cvt.inc.cons import FLOOR5_COLUMN_NAME
 from controllers import functions, env
 from controllers import error
 

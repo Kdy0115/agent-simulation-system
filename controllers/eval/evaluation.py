@@ -10,6 +10,7 @@ import pandas as pd
 from datetime import datetime as dt
 import os
 import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
 import json
 import matplotlib.ticker as ticker
 import sys
@@ -21,14 +22,14 @@ from controllers import error,env,functions
 
 
 # 出力先フォルダパス
-output_dir_path = "eval/result_2021_11_22/"
+output_dir_path = "eval/result_2021_08_14_20/"
 # シミュレーション結果フォルダ
-out_simulation_result_dir = "out/result_2021_11_22/"
+out_simulation_result_dir = "out/result_2021_08_14_20/"
 # 吸い込み評価用ファイルパス
-base_file_inhalt_path = "data/config_data/2021_11_20_26/base/all_bems_data5.csv"
+base_file_inhalt_path = "data/config_data/2021_08_14_27/base/all_bems_data5.csv"
 
 # 温度取りデータ評価用ファイル
-observe_file_path = "data/config_data/observe/all/observe2.csv"
+observe_file_path = "data/config_data/observe/all/observe1.csv"
 # 温度取りデータ位置座標ファイルパス
 position_data = "data/layout/position.json"
 
@@ -41,6 +42,9 @@ simulation_data = "{}/result5.json".format(out_simulation_result_dir)
 observe_evaluation = True
 # グラフ出力フラグ
 graph_output       = True
+# フォントパス
+font_path = 'inc/ipaexg00401/ipaexg.ttf'
+font_prop = FontProperties(fname=font_path)
 
 
 # 同一日時の場合は現在の時間を設定する
@@ -93,6 +97,10 @@ def create_graphes(df,columns,floor,setting_columns,output_dir):
     ax_set_list = []
     y_base = 1.0
     
+    x_label_time = [(len(x)//5)*i for i in range(5)]
+    x_label_time.append(len(x) - 1)
+    x_label_id = [df.iloc[i]["時間"] for i in x_label_time]
+    
     l_4 = "外気温"
     y4 = df["外気温"].values
     
@@ -108,6 +116,7 @@ def create_graphes(df,columns,floor,setting_columns,output_dir):
         height = 0.12
         y_base -= 0.185 if i % 2 == 0 else 0
         ax_set = fig.add_axes([x_base,y_base,width,height])
+        plt.xticks(rotation=10)
         y1 = df[l_1].values
         y2 = df[l_2].values
         y3 = df[l_3].values
@@ -116,14 +125,18 @@ def create_graphes(df,columns,floor,setting_columns,output_dir):
     for c,item in enumerate(ax_set_list):
         item[0].plot(item[2][0],item[2][1],label=item[1][0])
         item[0].plot(item[2][0],item[2][2],label=item[1][1])
-        item[0].plot(item[2][0],item[2][3],label=item[1][2])
-        item[0].plot(item[2][0],item[2][4],label=item[1][3])
-        item[0].legend(loc='upper left',fontsize=12)
+        # item[0].plot(item[2][0],item[2][3],label=item[1][2])
+        # item[0].plot(item[2][0],item[2][4],label=item[1][3])
+        item[0].legend(loc='upper left',fontsize=12,prop=font_prop)
+        
+        item[0].xaxis.set_major_locator(ticker.FixedLocator(x_label_time))
+        item[0].set_xticklabels(x_label_id)
 
-        item[0].set_title("比較結果{}".format(c),fontsize=14)
-        item[0].set_xlabel("時間[min]",fontsize=14)
-        item[0].set_ylabel("温度[℃]",fontsize=14)
+        item[0].set_title("Comparison result{}".format(c),fontsize=14)
+        item[0].set_xlabel("Time [min]",fontsize=14)
+        item[0].set_ylabel("Temp [℃]",fontsize=14)
         item[0].set_ylim([min_temp,max_tmep])
+        
 
     plt.subplots_adjust(wspace=0.2, hspace=0.3)
 
@@ -182,6 +195,7 @@ def create_observe_graphe(df,column,dir_path):
     fig = plt.figure(figsize=(20,20))
     
     x_label_time = [(len(x)//10)*i for i in range(10)]
+    x_label_time.append(len(x) - 1)
     x_label_id = [df.iloc[i]["時間"] for i in x_label_time]
     
     min_temp = 18

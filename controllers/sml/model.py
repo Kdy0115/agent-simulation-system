@@ -629,7 +629,6 @@ class AirConditioner(Agent):
 
     def step(self):
         if self.model.schedule.steps%60 == 0:
-            print("debug")
             self.read_control_data()
             self.switch_mode()
             # if self.mode != 0:
@@ -648,6 +647,7 @@ class HeatModel(Model):
         current_id [int]                : model自体のID
         running [bool]                  : modelの実行状態
         terminate [bool]                : シミュレーション終了識別フラグ
+        init_set_temp_method [int]      : 初期値決定アルゴリズムの種別
         layout_data [dict]              : レイアウト情報が格納されたデータ
         source_data [dict]              : 熱源情報が格納されたデータ
         ac_position [dict]              : 空調情報が格納されたデータ
@@ -680,6 +680,12 @@ class HeatModel(Model):
         self.current_id =  0
         self.running = True
         self.terminate = False
+        
+        # 初期温度設定アルゴリズム
+        # 0: 吸込温度の利用のみ 
+        # 1: 外気温の重み付けをしたもの（温度差が小さい場合）
+        # 2: 外気温の重み付けをしたもの（温度差が大きい場合）
+        self.init_set_temp_method = 1
 
         self.layout_data = layout_data["layout"]
         self.source_data = source_data["data"]
@@ -712,11 +718,19 @@ class HeatModel(Model):
     def __set_init_bems_data(self):
         self.bems_data_num = 0
         self.init_bems_data = self.all_bems_data[self.bems_data_num]
-        #print(self.init_bems_data)
-        #print(self.init_bems_data.keys())
-        #print(type(self.init_bems_data))
-        #self.out_temp = self.init_bems_data['外気温']
-        # self.bems_data_num += 1
+        self.out_temp = self.init_bems_data['外気温']
+        bems_data_temp_arr = []
+        
+        for key,value in self.init_bems_data.items():
+            if '吸込温度' in key:
+                bems_data_temp_arr.append(value)
+        bems_data_temp_avg = sum(bems_data_temp_arr) / len(bems_data_temp_arr)
+        if abs(self.out_temp - bems_data_temp_avg) > 10:
+            self.init_set_temp_method = 2
+        else:
+            self.init_set_temp_method = 1
+        # self.init_set_temp_method = 0
+        
         
     def __set_init_ac_agents(self):
         """ 空調エージェントの配置を行うメソッド
@@ -726,7 +740,6 @@ class HeatModel(Model):
         for one in self.ac_position:
             # 空調の配置
             pos = (float(one["x"]),float(one["y"]),float(one["z"]))
-            print(pos)
             agent = AirConditioner(self.next_id(),self,pos,one["id"],self.init_bems_data["{}吸込温度".format(one["id"])])
             self.schedule.add(agent)
             self.grid.place_agent(agent, pos)
@@ -787,7 +800,6 @@ class HeatModel(Model):
         agent = -1
         # 空間エージェントの場合
         if kind == HEAT_KIND_SPACE:
-            temp = 26.5
             agent = Space(self.next_id(),self,pos,temp)
         # 空間エージェント以外の場合
         elif kind == HEAT_SOURCE_KIND_WINDOW or kind == HEAT_SOURCE_KIND_BARRIER or kind == HEAT_SOURCE_KIND_FLOOR or kind == HEAT_SOURCE_KIND_CEILING:
@@ -827,12 +839,18 @@ class HeatModel(Model):
                     # 最も近い空調エージェントを基準
                     temp, near_ac_id = self.__determine_agent_temp_from_ac(pos)
                     # 初期の温度の天井側以外（z = 0, 1, 2のみ）と左側の窓付近のみ外気温と吸込温度の平均値に設定する
-                    '''
-                    if z < 3:
-                        temp = (temp + self.out_temp) / 2
-                    elif z == 3:
-                        temp = (temp*2 + self.out_temp) / 3
-                    '''
+                    if self.init_set_temp_method == 0:
+                        pass
+                    elif self.init_set_temp_method == 1:
+                        if z < 3:
+                            temp = (temp + self.out_temp) / 2
+                        elif z == 3:
+                            temp = (temp*4 + self.out_temp) / 5
+                    elif self.init_set_temp_method == 2:
+                        if z < 3:
+                            temp = (temp*8 + self.out_temp*3) / 11
+                        elif z == 3:
+                            temp = (temp*3 + self.out_temp) / 4
                     # 熱源があるかを調べる
                     heat_source_exist, heat_source_id = self.__check_heat_source_agent_exist(pos)
                     if self.__check_ac_postiion_overwrap(pos):
@@ -909,13 +927,13 @@ class HeatModel(Model):
         except StopIteration:
             self.terminate = True
 
-    def _reset_heat_source_temp(self):
+    def _reset_agent_temp(self,agent_name):
         """ 熱源情報を更新するメソッド
             自身から最小距離になる空調エージェントの吸込温度に設定
         """
         # 熱源エージェントだけ取得
         for agent in self.grid._index_to_agent.values():
-            if agent.__class__.__name__ =="HeatSource":
+            if agent.__class__.__name__ == agent_name:
                 x_i,y_i,z_i = agent.pos
                 pos_format = (float(x_i),float(y_i),float(z_i))
                 distance_arr = []
@@ -924,11 +942,19 @@ class HeatModel(Model):
                 base_id = self.ac_agents_list[distance_arr.index(min(distance_arr))].ac_id
                 temp = self.init_bems_data["{}吸込温度".format(base_id)]
                 # 真ん中より窓際でかつ人の高さより低ければ外気温との平均をとる
-                agent.temp = temp
-                # if z_i < 3 and x_i < 10:
-                #     agent.temp = (temp + self.out_temp) / 2
-                # else:
-                #     agent.temp = temp
+                if self.init_set_temp_method == 0:
+                    agent.temp = temp
+                elif self.init_set_temp_method == 1:
+                    if z_i < 3:
+                        agent.temp = (temp + self.out_temp) / 2
+                    elif z_i == 3:
+                        agent.temp = (temp*2 + self.out_temp) / 3
+                elif self.init_set_temp_method == 2:
+                    if z_i < 3:
+                        agent.temp = (temp*3 + self.out_temp*2) / 5
+                    elif z_i == 3:
+                        agent.temp = (temp*3 + self.out_temp) / 4                 
+                        
 
     def check_next_bems_data(self):
         """ 次のBEMSデータが存在するかチェックするメソッド
@@ -938,9 +964,9 @@ class HeatModel(Model):
             cmp_time = self.all_bems_data[self.bems_data_num]["時間"]    
             if self.time == cmp_time:
                 self.init_bems_data = self.all_bems_data[self.bems_data_num]
-                #self.out_temp = self.init_bems_data['外気温']
+                self.out_temp = self.init_bems_data['外気温']
                 print(self.init_bems_data,cmp_time)
-                self._reset_heat_source_temp()
+                self._reset_agent_temp("HeatSource")
         self.bems_data_num += 1
 
     def remove_agents(self):
@@ -970,6 +996,10 @@ class HeatModel(Model):
             self.per_time_dic["timestamp"] = self.time.strftime('%Y-%m-%d %H:%M:%S')
             self.per_time_dic["agent_list"] = []
             self.schedule.step()
+            # 00:00:00のときで1回以上のシミュレーション回数のときは空間を再初期化
+            if (self.time.hour == 0) and (self.time.minute == 0) and (self.time.second == 0) and (self.schedule.steps > 1):
+                self._reset_agent_temp("Space")
+                print("00:00:00になったので温度の最初期化を行います")
             if self.time.second == 0:
                 self.check_next_bems_data()
                 self.next_control_data()
