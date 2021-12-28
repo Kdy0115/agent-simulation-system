@@ -81,7 +81,6 @@ async function first_read(){
     layoutFiles = res[0];
     sourceFiles = res[1];
     positionFiles = res[2];
-    console.log(positionFiles)
   
     createSelectBox(layoutFiles,'layout');
     createSelectBox(sourceFiles,'source');
@@ -445,6 +444,8 @@ function getCoordinateInCanvas(canvas,sparse){
             default:
               break;
           }
+          console.log(widthNumber,heightNumber);
+          // y = (heightNumber - 1) - y;
           ctx.fillRect(x*sparse,y*sparse,sparse,sparse);
           ctx.fill();
        }
@@ -539,6 +540,29 @@ function getCoordinateInCanvas(canvas,sparse){
     sourceDataSet = res[1];
     observeDataSet = res[2];
   
+    for(var i=0; i < layoutDataSet.length; i++){
+      for(var j=0; j < layoutDataSet[i]['layout'].length; j++){
+        layoutDataSet[i]['layout'][j].reverse();
+        y_max = layoutDataSet[i]['layout'][j].length;
+      }
+    }
+
+    for(var i=0; i<sourceDataSet.length; i++){
+      for(var j=0; j<sourceDataSet[i]['data'].length; j++){
+        sourceDataSet[i]['data'][j]['y'] = (y_max - 1) - sourceDataSet[i]['data'][j]['y'];
+      }
+    }
+
+    for(var i=0; i<layoutDataSet.length; i++){
+      for(var j=0; j<layoutDataSet[i]['ac'].length; j++){
+        layoutDataSet[i]['ac'][j]['y'] = (y_max - 1) - layoutDataSet[i]['ac'][j]['y'];
+      }
+    }
+
+    for(var i=0; i<observeDataSet.length; i++){
+      observeDataSet[i]['y'] = (y_max - 1) - observeDataSet[i]['y'];
+    }
+    
     renderFigure3dLayout(res[0],res[1],res[2],-1);
     createSelectboxFor2dLayout(res[0]);
   }
