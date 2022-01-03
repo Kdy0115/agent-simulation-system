@@ -147,7 +147,7 @@ for i in range(len(df_arr)):
 
 
 edit_df_arr = []
-for i in range(3):
+for i in range(5):
     edit_df_arr.append(merge_rows(df_arr,file_group_num*i,file_group_num*(i+1)))
     
 for i in range(len(edit_df_arr)):

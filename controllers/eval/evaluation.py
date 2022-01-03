@@ -22,11 +22,11 @@ from controllers import error,env,functions
 
 
 # 出力先フォルダパス
-output_dir_path = "eval/result_2021_08_14_20/"
+output_dir_path = "eval/result_2021_12_20/"
 # シミュレーション結果フォルダ
-out_simulation_result_dir = "out/result_2021_08_14_20/"
+out_simulation_result_dir = "out/result_2021_12_20_test/"
 # 吸い込み評価用ファイルパス
-base_file_inhalt_path = "data/config_data/2021_08_14_27/base/all_bems_data5.csv"
+base_file_inhalt_path = "data/config_data/2021_12_17_12_28/base/all_bems_data5.csv"
 
 # 温度取りデータ評価用ファイル
 observe_file_path = "data/config_data/observe/all/observe1.csv"

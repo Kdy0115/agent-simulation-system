@@ -5,13 +5,13 @@ import os
 from inc.cons import KEY_MAP_FLOOR_DICT
 
 
-trend_data_file_path = 'docs/src/TREND_76_6904050_20211201_20211217_20211221160803.xlsx'
+trend_data_file_path = 'docs/src/TREND_76_6904050_20211218_20211227_20211228183156.xlsx'
 
 df = pd.read_excel(trend_data_file_path)
 
-all_data_dir_path = "data/config_data/2021_12_01_17/base/"
-control_data_dir_path = "data/config_data/2021_12_01_17/control/"
-init_bems_data_dir_path = "data/config_data/2021_12_01_17/init_bems/"
+all_data_dir_path = "data/config_data/2021_12_17_12_28/base/"
+control_data_dir_path = "data/config_data/2021_12_17_12_28/control/"
+init_bems_data_dir_path = "data/config_data/2021_12_17_12_28/init_bems/"
 
 # floors = [4,5]
 floors = [5]
@@ -67,7 +67,7 @@ class TrendConvertData():
                 df_result.loc[(df_result[one+'運転']==1) & ((df_result[f'C館 {floor}F G50_省エネレベル'] == 2) | (df_result[f'C館 {floor}F G50_省エネレベル'] == 3) | (df_result[one+'運転モード'] == 3)),one+'運転モード'] = 3
                 # 運転状態1かつ省エネレベル1かつ運転モード1の場合は冷房（1）
                 df_result.loc[(df_result[one+'運転']==1) & (df_result[f'C館 {floor}F G50_省エネレベル'] == 1) & (df_result[one+'運転モード'] == 1),one+'運転モード'] = 1
-                # 運転状態が1かつ省エネレベル1かつ運転モード3の場合は暖房（2）
+                # 運転状態が1かつ省エネレベル1かつ運転モード2の場合は暖房（2）
                 df_result.loc[(df_result[one+'運転']==1) & ((df_result[f'C館 {floor}F G50_省エネレベル'] == 1) & (df_result[one+'運転モード'] == 2)),one+'運転モード'] = 2
                 # インペリ側を調査
                 if (one == f'C{floor}F 事務室中 PACG_') or (one == f'C{floor}F 事務室南 PACG_'):

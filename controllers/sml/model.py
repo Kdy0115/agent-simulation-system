@@ -64,29 +64,29 @@ class Space(Agent):
         self.temp = temp
         self.energy = self.temp * self.capacity
         self.neighbors_list = []
-        self.neighbors_upper_space_agent = None
+        self.neighbors_upper_space_agent = []
         self.model = model
         
     def natural_convection_heat(self):
         """ 自然対流による熱交換を行うメソッド
         """
         
-        if self.neighbors_upper_space_agent == None:
+        if len(self.neighbors_upper_space_agent) == 0:
             for agent in self.neighbors_list:
-                if self.pos[2] + 1 == agent.pos[2]:
-                    self.neighbors_upper_space_agent = agent
+                if self.pos[2] + 1 == agent.pos[2] or self.pos[2] - 1 == agent.pos[2]:
+                    self.neighbors_upper_space_agent.append(agent)
         # 鉛直上の空間エージェントを見て温度が小さければ鉛直上方向に自然対流熱荷を放出する。
-        if self.neighbors_upper_space_agent != None:
-            if self.neighbors_upper_space_agent.temp <= self.temp:
-                heat = abs(self.temp - self.neighbors_upper_space_agent.temp) * N_BETA
+        if len(self.neighbors_upper_space_agent) != 0:
+            for one in self.neighbors_upper_space_agent:
+                # if one.temp <= self.temp:
+                heat = (self.temp - one.temp) * N_BETA
                 self.energy -= heat
-                self.neighbors_upper_space_agent.energy += heat
+                one.energy += heat
                 self.temp -= heat/self.capacity
-                self.neighbors_upper_space_agent.temp += heat/self.neighbors_upper_space_agent.capacity
-                # space_heat_charge = SpaceHeatCharge(self.model.next_id(),self.model,self)
-                # self.model.schedule.add(space_heat_charge)
-                # self.model.grid.place_agent(space_heat_charge, self.pos)
-            
+                one.temp += heat/one.capacity
+                
+                
+        
     def exchange_heat(self):
         """ 隣接する空間と熱交換を行うメソッド
         """        
@@ -729,6 +729,8 @@ class HeatModel(Model):
             self.init_set_temp_method = 2
         else:
             self.init_set_temp_method = 1
+            
+        self.init_set_temp_method = 0
         # self.init_set_temp_method = 0
         
         
