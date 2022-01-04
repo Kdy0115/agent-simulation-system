@@ -23,7 +23,7 @@ RATE_OF_CHANGE = 0.4
 # Init energy air conditioners release
 INIT_AC_ENERGY = 15
 # Wind outlet angle（空調の吹き出し口の角度）
-WIND_OUTLET_ANGLE = 0
+WIND_OUTLET_ANGLE = 45
 
 # Heat capacity of a space（単一空間の比熱）
 SPACE_HEAT_CAPACITY = 1200

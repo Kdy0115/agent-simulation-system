@@ -36,7 +36,8 @@ HEAT_SOURCE_KIND_WINDOW  = 2
 HEAT_SOURCE_KIND_BARRIER = 3
 HEAT_SOURCE_KIND_FLOOR   = 4
 HEAT_SOURCE_KIND_CEILING = 5
-HEAT_SOURCE_KIND_OTHERS  = 6
+HEAT_SOURCE_OUT_SPACE    = 6
+HEAT_SOURCE_KIND_OTHERS  = 7
 
 # シミュレーションBEMSデータ再設定間隔（分）
 RESET_BEMS_DATA_SPAN = 30
@@ -49,23 +50,27 @@ class Space(Agent):
         mesaのエージェントクラスをオーバーライド
 
     Attributes:
-        pos [tupple]         : 空間エージェントの位置座標
-        temp [float]         : 空間エージェントの温度
-        energy [float]       : 空間エージェントの保有エネルギー
-        neighbors_list [list]: 空間エージェントの周囲のエージェントのIDが入ったリスト（探索時間を節約するため）
-        capacity [float]     : 空間エージェントの熱容量
+        pos [tupple]                        : 空間エージェントの位置座標
+        temp [float]                        : 空間エージェントの温度
+        energy [float]                      : 空間エージェントの保有エネルギー
+        neighbors_list [list]               : 空間エージェントの周囲のエージェントのIDが入ったリスト（探索時間を節約するため）
+        neighbors_upper_space_agent[list]   : 自然対流用の上下の空間エージェント
+        capacity [float]                    : 空間エージェントの熱容量
+        model [HeatModel]                   : 空間全体の空間モデル
+        outer [Bool]                        : 外部の空間かどうかを表す
     """    
     
     capacity = SPACE_HEAT_CAPACITY
     
-    def __init__(self, unique_id, model, pos, temp):
+    def __init__(self, unique_id, model, pos, temp, outer):
         super().__init__(unique_id, model)
-        self.pos = pos
-        self.temp = temp
-        self.energy = self.temp * self.capacity
-        self.neighbors_list = []
-        self.neighbors_upper_space_agent = []
-        self.model = model
+        self.pos                            = pos
+        self.temp                           = temp
+        self.energy                         = self.temp * self.capacity
+        self.neighbors_list                 = []
+        self.neighbors_upper_space_agent    = []
+        self.model                          = model
+        self.outer                          = outer
         
     def natural_convection_heat(self):
         """ 自然対流による熱交換を行うメソッド
@@ -99,11 +104,20 @@ class Space(Agent):
         for other in self.neighbors_list:
             if other.__class__.__name__ == "Space":
                 sum_heat = abs(self.temp - other.temp) * ALPHA
+                pre_self_temp = self.temp
+                pre_other_temp = other.temp
                 if self.temp > other.temp:
                     other.energy += sum_heat
                     other.temp += sum_heat/self.capacity
                     self.energy  -= sum_heat
                     self.temp  -= sum_heat/self.capacity
+                    
+                if self.outer:
+                    self.temp = pre_self_temp
+                    self.energy = self.temp * self.capacity
+                if other.outer:
+                    other.temp = pre_other_temp
+                    other.energy = other.temp * other.capacity                    
 
     def output_space_agent(self):
         """ エージェントの状態を保存するモジュール
@@ -125,54 +139,9 @@ class Space(Agent):
         self.exchange_heat()
         self.natural_convection_heat()
         self.output_space_agent()
-
-
-    
-class SpaceHeatCharge(Agent):
-    """ 自然対流時に発生する熱荷
-
-    Attributes:
-        Agent ([type]): [description]
-    """    
-    def __init__(self, unique_id, model, space):
-        super().__init__(unique_id, model)
-        self.temp = space.temp
-        self.pos = space.pos
-        self.model = model
-        
-    def move(self):
-        """ 天井側に移動していく（z軸方向に1ずれる）
-        """     
-        new_pos = (self.pos[0],self.pos[1],self.pos[2]+1)   
-        self.model.grid.move_agent(self,new_pos)
-        
-    def convection_heat(self):
-        """ 空間に自然対流による熱伝達を行うメソッド
-        """        
-        target_agent = -1
-        neighbors_list = self.model.grid.get_neighbors(self.pos, 0, include_center=False)
-        for agent in neighbors_list:
-            if agent.__class__.__name__ == "Space":
-                target_agent = agent
-                break
-        
-        if target_agent != -1:
-            heat = abs(self.temp - target_agent.temp) * N_BETA
-            self.space.energy -= heat
-            self.space.temp -= heat/self.space.capacity
-            target_agent.energy += heat
-            target_agent.temp += heat/target_agent.capacity
-        
-    def add_remove_agents(self):
-        """ エージェント削除リストへエージェントを追加するメソッド
-        """        
-        self.model.remove_agents_set.add(self.unique_id)
-        
-    def step(self):
-        self.move()
-        self.convection_heat()
-        self.add_remove_agents()
-                
+        if self.outer:
+            self.temp = self.model.out_temp
+            self.energy = self.temp * self.capacity
 
         
 class HeatSource(Agent):
@@ -190,15 +159,17 @@ class HeatSource(Agent):
         base_ac_id [list]    : 空調のIDが格納された配列
         capacity [float]     : 熱源エージェントの熱容量
         neighbors_list [list]: 周囲の隣接するエージェントのIDが格納されたリスト
+        outer [Bool]         : 外部にあるエージェント
     """    
     
-    def __init__(self, unique_id, model, pos, temp, kind, base_ac_id):
+    def __init__(self, unique_id, model, pos, temp, kind, base_ac_id, outer):
         super().__init__(unique_id, model)
         self.pos = pos
         self.temp = temp
         self.kind = kind
         self.model = model
         self.base_ac_id = base_ac_id
+        self.outer = outer
         
         if self.kind == HEAT_SOURCE_KIND_WINDOW:
             self.capacity = WINDOW_HEAT_CAPACITY
@@ -230,6 +201,8 @@ class HeatSource(Agent):
             self.neighbors_list = self.model.grid.get_neighbors(self.pos, 1, include_center=False)            
         for other in self.neighbors_list:
             if other.__class__.__name__ == "Space":
+                pre_self_temp = self.temp
+                pre_other_temp = other.temp
                 # 人の場合は自身のプロパティは変更されない
                 if self.kind == HEAT_SOURCE_KIND_OTHERS:
                     sum_heat = (abs(self.temp - other.temp) * _human_heat_ratio) / len(self.neighbors_list)
@@ -249,6 +222,13 @@ class HeatSource(Agent):
                         self.temp  += sum_heat/self.capacity
                         other.energy -= sum_heat
                         other.temp -= sum_heat/other.capacity
+                    
+                if self.outer:
+                    self.temp = pre_self_temp
+                    self.energy = self.temp * self.capacity
+                if other.outer:
+                    other.temp = pre_other_temp
+                    other.energy = other.temp * other.capacity      
 
     def out_barrier_agent(self):
         """
@@ -287,6 +267,10 @@ class HeatSource(Agent):
             self.radiant_heat(1)
         else:
             self.radiant_heat(0)
+        
+        if self.outer:
+            self.temp = self.model.out_temp
+            self.energy = self.temp * self.capacity
 
         
 
@@ -746,7 +730,7 @@ class HeatModel(Model):
             self.schedule.add(agent)
             self.grid.place_agent(agent, pos)
             # 空調と同じ場所には吸込用の空間を配置
-            agent = Space(self.next_id(),self,pos,self.init_bems_data["{}吸込温度".format(one["id"])])
+            agent = Space(self.next_id(),self,pos,self.init_bems_data["{}吸込温度".format(one["id"])],False)
             self.schedule.add(agent)
             self.grid.place_agent(agent, pos)
             self.init_ac_coordinate_arr.append(pos)
@@ -790,7 +774,7 @@ class HeatModel(Model):
         
         return base_temp, base_ac_id
     
-    def __set_init_agent_place(self,kind,pos,temp,ac_id):
+    def __set_init_agent_place(self,kind,pos,temp,ac_id,outer):
         """ 単一のエージェントを配置するメソッド
 
         Args:
@@ -798,14 +782,15 @@ class HeatModel(Model):
             pos [tupple]: 位置座標のタプル
             temp [float]: 温度
             ac_id [int] : 最も近い空調ID
+            outer [Bool]: 外部にあるかどうか
         """        
         agent = -1
         # 空間エージェントの場合
         if kind == HEAT_KIND_SPACE:
-            agent = Space(self.next_id(),self,pos,temp)
+            agent = Space(self.next_id(),self,pos,temp, outer)
         # 空間エージェント以外の場合
         elif kind == HEAT_SOURCE_KIND_WINDOW or kind == HEAT_SOURCE_KIND_BARRIER or kind == HEAT_SOURCE_KIND_FLOOR or kind == HEAT_SOURCE_KIND_CEILING:
-            agent = HeatSource(self.next_id(),self,pos,temp,kind,ac_id)
+            agent = HeatSource(self.next_id(),self,pos,temp,kind,ac_id, outer)
         # 配置可能エージェントの場合空間内に設定
         if agent != -1:
             self.schedule.add(agent)
@@ -838,6 +823,7 @@ class HeatModel(Model):
             for y in range(self.height):
                 for x in range(self.width):
                     pos = (float(x),float(y),float(z))
+                    outer = False
                     # 最も近い空調エージェントを基準
                     temp, near_ac_id = self.__determine_agent_temp_from_ac(pos)
                     # 初期の温度の天井側以外（z = 0, 1, 2のみ）と左側の窓付近のみ外気温と吸込温度の平均値に設定する
@@ -860,14 +846,20 @@ class HeatModel(Model):
                     # 熱源の場合は熱源の配置
                     elif heat_source_exist and heat_source_id != -1:
                         heat_source = self.source_data[heat_source_id]
-                        self.__set_init_agent_place(self,HEAT_SOURCE_KIND_OTHERS,pos,heat_source["temp"])
+                        self.__set_init_agent_place(self,HEAT_SOURCE_KIND_OTHERS,pos,heat_source["temp"],outer)
                         # 熱源と同じ位置に空間も配置
                         agent_kind = 1
-                        self.__set_init_agent_place(agent_kind,pos,temp,near_ac_id)
+                        self.__set_init_agent_place(agent_kind,pos,temp,near_ac_id,outer)
                     # それ以外の場合はレイアウト情報に合わせてエージェントの配置
                     else:
                         agent_kind = self.layout_data[z][y][x]
-                        self.__set_init_agent_place(agent_kind,pos,temp,near_ac_id)
+                        if agent_kind == HEAT_SOURCE_OUT_SPACE:
+                            outer = True
+                            temp = self.out_temp
+                            self.__set_init_agent_place(HEAT_SOURCE_KIND_WINDOW,pos,temp,near_ac_id,outer)
+                            self.__set_init_agent_place(HEAT_KIND_SPACE,pos,temp,near_ac_id,outer)
+                        else:
+                            self.__set_init_agent_place(agent_kind,pos,temp,near_ac_id,outer)
 
     def __set_init_layout(self):
         """ シミュレーションの空間レイアウト初期値を設定するメソッド
