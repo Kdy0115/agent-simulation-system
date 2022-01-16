@@ -2,37 +2,107 @@
 <html lang="en">
     <script type="text/javascript" src='js/component/header.js'></script>
 <body>
-    <!-- メニュー -->
-    <script type='text/javascript' src='js/component/global_nav.js'></script>
-
-    <!-- 中身-->
-    <div id="content">
-        <h1>評価</h1>
-        <label>BEMSファイル（評価用データ）のパスを入力</label><br>
-        <input type="text" id="bems_folder_path" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
-        <label>シミュレーション結果ファイルのパスを入力</label><br>
-        <input type="text" id="result_of_simulation_file" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
-        <label>温度取りの結果ファイルのパスを入力</label><br>
-        <input type="text" id="temp_file" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
-
+        <!-- メニュー -->
+        <script src='js/component/global_nav.js'></script>
         
-        <div id="result">
-            <h2>差分グラフ</h2>
-            <div id="difference_graph"></div>
-
-            <h3>MAE、最大絶対誤差、分散を確認したい時間範囲を入力</h3>
-            <h3>範囲の初めの時間</h3>
-            <input type="datetime-local" id="strat_time"><br>
-            <h3>範囲の終わりの時間</h3>
-            <input type="datetime-local" id="end_time"><br>
-
-            <button type='button' id="print_evaluated_data_table" onclick="print_evaluated_data_table();">評価を見る</button>
-
-            <h2>表</h2>
-            
-            <div id="table"></div>
-        </div>
-    </div>
+        <!-- 中身-->
+        <div id="content">
+            <!-- シミュレーション設定コンテンツ-->
+            <div class="configure-card">
+                <div class="row">
+                    <div class="col s12">
+                      <div class="card blue-grey white">
+                        <div class="card-content grey-text text-darken-3">
+                          <span class="card-title">評価</span>
+                          <p>シミュレーション結果の評価を行います。</p>
+                            <div id='setting_input' class="setting-form">
+                                <label>シミュレーション開始日時</label><br>
+                                <input type="datetime-local" id="start_time" class="start-time" placeholder="5桁以内で入力"><br>
+                                <label>シミュレーション終了日時</label><br>
+                                <input type="datetime-local" id="finish_time" placeholder="5桁以内で入力"><br>
+                                <div class="input-field">
+                                  <select id="result-select-box">
+                                    <option value="" disabled selected>選択してください</option>
+                                  </select>
+                                  <label>シミュレーション結果フォルダ</label>
+                                </div>
+                                <div class="input-field">
+                                  <select id="position-select-box">
+                                    <option value="" disabled selected>選択してください</option>
+                                  </select>
+                                  <label>温度取り位置ファイル</label>
+                                </div>
+                            </div>
+                              <div class="row">
+                                  <a id="import-evaluation-data-button" onclick="importEvaluationData();" class="waves-effect waves-light btn-large blue"><h5>読み込み</h5></a>
+                              </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+              </div>
+            <!-- グラフ出力-->
+            <div class="configure-card">
+              <div class="row">
+                  <div class="col s12">
+                    <div class="card blue-grey white">
+                      <div class="card-content grey-text text-darken-3">
+                        <span class="card-title">差分グラフ出力</span>
+                        <p>選択したファイルのシミュレーション結果と実測値の比較を行います</p>
+                        <div class="row">
+                          <div class="col s12">
+                            <ul class="tabs">
+                              <li class="tab col s3"><a class="active" href="#bems">吸込温度</a></li>
+                              <li class="tab col s3"><a href="#observe">温度取り</a></li>
+                            </ul>
+                          </div>
+                          <div id="bems" class="col s12">BEMS
+                            <ul id="bems-graph-box" class="collapsible expandable">
+                              <li>
+                                <div class="collapsible-header"><i class="material-icons">whatshot</i>レイアウト</div>
+                                <div class="collapsible-body"><span>レイアウトを挿入</span></div>
+                              </li>
+                            </ul>
+                          </div>
+                          <div id="observe" class="col s12">observe
+                            <ul id="observe-graph-box" class="collapsible expandable">
+                              <li>
+                                <div class="collapsible-header"><i class="material-icons">whatshot</i>レイアウト</div>
+                                <div class="collapsible-body"><span>レイアウトを挿入</span></div>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+                <div class="configure-card">
+                  <div class="row">
+                      <div class="col s12">
+                        <div class="card blue-grey white">
+                          <div class="card-content grey-text text-darken-3">
+                            <span class="card-title">誤差の評価</span>
+                            <p>予測値と実測値の誤差の評価を行います。</p><p>※MAEによる評価</p>
+                            <div class="row">
+                              <div class="col s12">
+                                <ul class="tabs">
+                                  <li class="tab col s3"><a class="active" href="#bems_eval">吸込温度</a></li>
+                                  <li class="tab col s3"><a href="#observe_eval">温度取り</a></li>
+                                </ul>
+                              </div>
+                              <div id="bems_eval" class="col s12">
+                              </div>
+                              <div id="observe_eval" class="col s12">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
 
 <script type="text/javascript" src="js/evaluation.js"></script>
 </body>

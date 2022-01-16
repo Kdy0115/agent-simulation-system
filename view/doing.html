@@ -63,7 +63,7 @@
                                 <button type='button' id="previous_heatmap" onclick="previous_heatmap();">前へ</button>
                                 <button type='button' id="next_heatmap" onclick="next_heatmap();">次へ</button>                                
                                 <button type='button' id="movie_heatmap" onclick="movie_heatmap();">動画として再生</button>
-                                <input type="range" id="inputSlideBar" min="0" max="100" step="1">
+                                <input type="range" id="inputSlideBar" min="0" max="100" step="1" onchange="changeSlideBar();">
                                 <a class="btn-floating btn-large waves-effect waves-light blue" onclick="playHeatMap();"><i class="material-icons">skip_previous</i></a>
                                 <a class="btn-floating btn-large waves-effect waves-light blue" onclick="playHeatMap();"><i class="material-icons">play_arrow</i></a>
                                 <a class="btn-floating btn-large waves-effect waves-light blue" onclick="playHeatMap();"><i class="material-icons">forward_5</i></a>

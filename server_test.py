@@ -7,6 +7,7 @@ import sys
 import os
 import json
 import glob
+import statistics
 
 #import time
 import pandas as pd
@@ -25,6 +26,12 @@ import numpy as np
 import seaborn as sns
 from controllers import functions
 # from main import main
+
+# BEMS全データパス
+bems_all_data_file_path = 'data/config_data/all/base/all_bems_data5.csv'
+# 温度取り全データパス
+measurement_all_data_file_path = 'data/config_data/observe/all_observe.csv'
+
 
 global json_all_data
 # ユーザー定義ファイル
@@ -407,12 +414,210 @@ def data_evaluation(out_file,observe_file,simulation_file,position,observe_flag,
 
 
 #################################################################################
-# レイアウト描画用サーバー側プログラム                                          #
+# シミュレーション結果評価用プログラム                                          #
 #################################################################################
+class EvaluationController():
+    """ 評価用データを作成するメソッドを定義した操作クラス
+        ＊BEMSデータ評価用の操作メソッド
+        ＊温度取りデータ評価用の操作メソッド
+    """    
+    def __init__(self):
+        # BEMSデータと温度取りデータをプール場所から取得
+        self.df_bems = pd.read_csv(bems_all_data_file_path,encoding="shift-jis")
+        self.df_measure = pd.read_csv(measurement_all_data_file_path,encoding="shift-jis")
+    
+    def _rename_columns(self, df):
+        df_new_columns = ["時間"]
+        setting_columns = []
+        columns = []
+        for i in df.columns:
+            # 吸込温度のみを抽出
+            if "吸込温度" in i:
+                df_new_columns.append(i+"_予測")
+                columns.append(i)
+            # 設定温度のみを抽出
+            elif "設定温度" in i:
+                setting_columns.append(i)
+
+        return df_new_columns,columns,setting_columns
+    
+    def create_inahalation_temp_evaluation(self, df_simulation):
+        """ BEMSにおける吸い込み温度で評価用データを作成するメソッド
+
+        Args:
+            df_simulation [DataFrame]: シミュレーションの予測結果が格納されたDataFrame型のデータ
+
+        Returns:
+            inhalation_evaluation_data [dict]: JS描画用誠整形したファイルデータ
+        """        
+        floor = "5"
+        time = df_simulation.iloc[0]['時間']
+        df_time = dt.strptime(time, '%Y-%m-%d %H:%M:%S')
+        df_simulation.columns,extract_columns,setting_columns = self._rename_columns(self.df_bems)
+        df_merge = pd.merge(self.df_bems, df_simulation, on="時間", how="right")
+        try:
+            df_merge['外気温'] = self.df_bems['外気温'].values
+        except ValueError:
+            df_merge['外気温'] = 0
+            
+        inhalation_evaluation_data = {
+            'time': list(df_merge['時間'].values),
+            'temp':[]
+        }
+        
+        df_mae_evaluation = pd.DataFrame()
+        all_data_arr = []
+        
+        for one in extract_columns:
+            one_id_temp_data = {}
+            one_id_temp_data['id'] = one
+            one_id_temp_data['data_p'] = list(df_merge[one+"_予測"].values)
+            one_id_temp_data['data_m'] = list(df_merge[one].values)
+            inhalation_evaluation_data['temp'].append(one_id_temp_data)
+            df_mae_evaluation[one+'差分'] = (df_merge[one+'_予測'] - df_merge[one]).abs()
+            all_data_arr.extend((df_merge[one+'_予測'] - df_merge[one]).abs())
+            
+        inhalation_mae_result = df_mae_evaluation.describe().to_dict()
+        mean = statistics.mean(all_data_arr)
+        std  = statistics.pstdev(all_data_arr)
+        all_inhalation_mae_result = [mean,std]
+            
+        return [inhalation_evaluation_data, inhalation_mae_result, all_inhalation_mae_result]
+    
+    def create_measurement_temp_evaluation(self, simulation_json_data, position_file_path):
+        """ 温度取りデータ用の評価データを作成するメソッド
+
+        Args:
+            simulation_json_data (dict): シミュレーションの予測結果のjsonファイルを読み込んだリスト
+            position_file_path (dict): 温度取りの位置座標が記載されたjsonファイルを読み込んだリスト
+        """        
+        # 温度取りデータ self.df_measure
+        config_ini = configparser.ConfigParser()
+        config_ini.read('config/config.ini', encoding='utf-8')
+        config_layout     = config_ini["LAYOUT"]['lyaout_floor_file_path']
+        layout_data = functions.import_json_file(config_layout)
+        
+        find_id_arr = simulation_json_data[0]['agent_list']
+        
+        # 温度取りの座標と一致する空間を取得
+        observe_space_id_arr = []
+        for i in position_file_path:
+            sensor_id,x,y,z = i["id"],i["x"],i["y"],i["z"]
+            for agent in find_id_arr:
+                if agent["class"] == "space":
+                    if (agent["x"] == x) and (agent["y"] == y) and (agent["z"] == z):
+                        observe_space_id_arr.append((sensor_id,agent["id"]))        
+                        
+        columns = [str(i[0])+"_予測値" for i in observe_space_id_arr]
+        columns.append("時間")
+        result_df = pd.DataFrame(data=[],columns=columns)
+        
+        base_columns = list(result_df.columns)
+        for per_time_data in simulation_json_data:
+            time = per_time_data["timestamp"]
+            row = [0] * len(base_columns)
+            for agent in per_time_data["agent_list"]:
+                for space in observe_space_id_arr:
+                    if agent["id"] == space[1]:
+                        row[base_columns.index("{}_予測値".format(space[0]))] = agent["temp"]
+            row[-1] = time
+            result_df.loc[len(result_df)] = row        
+        
+        df_merge = pd.merge(result_df,self.df_measure,on="時間",how="left")
+        
+        # print(df_merge)
+        
+        measurement_evaluation_data = {
+            'time': list(df_merge['時間'].values),
+            'temp':[]
+        }
+        
+        df_mae_evaluation = pd.DataFrame()
+        all_data_arr = []
+        for one in observe_space_id_arr:
+            one_id_temp_data = {}
+            one_id_temp_data['id'] = str(one[0])
+            one_id_temp_data['data_p'] = list(df_merge[str(one[0])+"_予測値"].values)
+            one_id_temp_data['data_m'] = list(df_merge[str(one[0])+"_実測値"].values)
+            measurement_evaluation_data['temp'].append(one_id_temp_data)
+            df_mae_evaluation[str(one[0])+'差分'] = (df_merge[str(one[0])+'_予測値'] - df_merge[str(one[0])+'_実測値']).abs()
+            all_data_arr.extend((df_merge[str(one[0])+'_予測値'] - df_merge[str(one[0])+'_実測値']).abs())            
+            
+        print(df_mae_evaluation.describe().to_dict())
+        mean = statistics.mean(all_data_arr)
+        std  = statistics.pstdev(all_data_arr)
+        
+        measurement_mae_result = df_mae_evaluation.describe().to_dict()
+        mean = statistics.mean(all_data_arr)
+        std  = statistics.pstdev(all_data_arr)
+        all_measurement_mae_result = [mean,std]
+        
+        return [measurement_evaluation_data, measurement_mae_result, all_measurement_mae_result]
+    
+            
+@eel.expose
+def create_evaluation_data(path,pos_file_path):
+    """ シミュレーション結果を整形してJSに返す関数
+
+    Args:
+        path [str]: JS側から入力されたシミュレーション結果フォルダパス
+
+    Returns:
+        [list]: 整形されたグラフ作成用のデータと定量評価用の表データを返す
+    """    
+    print('ファイルを読み込みます')
+    print(path)
+    # シミュレーション結果各種ファイルパス
+    simulation_inhalation_file_path = path + "cmp/result5.csv"
+    df_simulation_inhalation = pd.read_csv(simulation_inhalation_file_path,encoding="shift-jis")
+    
+    # シミュレーション結果jsonファイル
+    simulation_measurement_file_path = path + "result5.json"
+    simulation_measurement_data = functions.import_json_file(simulation_measurement_file_path)
+    # 温度取りデータの位置情報データ
+    measurement_position_data = functions.import_json_file(pos_file_path)
+    
+    
+    evalController = EvaluationController()
+    # 吸い込み側のデータ整形
+    inhalation_data = evalController.create_inahalation_temp_evaluation(df_simulation_inhalation)
+    # 温度取りデータ整形
+    measurement_data = evalController.create_measurement_temp_evaluation(simulation_measurement_data,measurement_position_data)
+    
+    return [inhalation_data, measurement_data]
+
+@eel.expose
+def render_evaluation_dir():
+    out_path = 'out/'
+    position_file_path = 'data/layout/'
+    out_files = os.listdir(out_path)
+    out_files_dir = [out_path+f+"/" for f in out_files if os.path.isdir(os.path.join(out_path, f))]
+    
+    files = glob.glob("{}*".format(position_file_path))
+    position_files   = []
+    for file in files:
+        file = file.replace('\\','/')
+        if "position" in file:
+            position_files.append(file)
+
+    return [out_files_dir,position_files]
+    
 
 #################################################################################
 # レイアウト描画用サーバー側プログラム                                          #
 #################################################################################
+
+def convert_data_coordinate_for_js(data):
+    """ JSでのAPI利用時の座標情報に合わせて座標を変換する関数
+    厳密にはy座標が上下入れ替わるのでy = (yの最大値 - 1) - y に変換する
+
+    Args:
+        data (dic): 辞書型のデータが格納されたエージェント集合
+
+    Returns:
+        result_data: 変換後のデータが格納されたエージェント集合
+    """    
+    print(data)
 
 @eel.expose
 def import_layout_files(*args):

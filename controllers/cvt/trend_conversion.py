@@ -5,13 +5,13 @@ import os
 from inc.cons import KEY_MAP_FLOOR_DICT
 
 
-trend_data_file_path = 'docs/src/TREND_76_6904050_20211218_20211227_20211228183156.xlsx'
+trend_data_file_path = 'docs/src/TREND_76_6904050_20211228_20220114_20220115110939.xlsx'
 
 df = pd.read_excel(trend_data_file_path)
 
-all_data_dir_path = "data/config_data/2021_12_17_12_28/base/"
-control_data_dir_path = "data/config_data/2021_12_17_12_28/control/"
-init_bems_data_dir_path = "data/config_data/2021_12_17_12_28/init_bems/"
+all_data_dir_path = "data/config_data/2021_12_28_2022_01_14/base/"
+control_data_dir_path = "data/config_data/2021_12_28_2022_01_14/control/"
+init_bems_data_dir_path = "data/config_data/2021_12_28_2022_01_14/init_bems/"
 
 # floors = [4,5]
 floors = [5]

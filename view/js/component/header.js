@@ -55,7 +55,8 @@ if(currentURL == 'index.html'){
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
         <script src="https://unpkg.com/three@0.131.3/build/three.min.js"></script>
-        <script src="https://unpkg.com/three@0.131.3/examples/js/controls/OrbitControls.js"></script>        
+        <script src="https://unpkg.com/three@0.131.3/examples/js/controls/OrbitControls.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
         <link rel="stylesheet" href="css/common/header.css"/>
         <link rel="stylesheet" href="css/index.css"/>
         <link rel="stylesheet" href="css/materialize.css">    

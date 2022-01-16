@@ -165,11 +165,21 @@ function heatmap(){
   console.log("ヒートマップ作成完了")
 }
 
-// const inputSlideBarElement = document.getElementById('inputSlideBar');
-
-// inputSlideBarElement.addEventListener('change', function(){
-// 	console.log(inputSlideBarElement.value);//(例)console => 90
-// });
+function changeSlideBar(){
+  var slidebarStatusValue = Number(document.getElementById('inputSlideBar').value);
+}
+/*
+【スライドバーの反映】
+  ＊最初の読み込み時に時間の開始～終了のみ取得
+  ＊全体の長さにスライドバーの進捗の割合をかけてnumberに反映させてonchagneでheatmap関数を呼び出す
+【一時停止】
+　＊動画再生中のみ実行できる
+　＊setIntervalを停止する
+【5分後、5分前に移動】
+　＊number = number + 5によって制御　out of indexの場合は最後/最初に移動する
+【最初に戻る】
+　＊numberを0に初期化してヒートマップを動かす
+*/
 /*******************************************************************************/
 /* グラフ出力                                                                  */
 /*******************************************************************************/

@@ -302,6 +302,12 @@ function renderFigure2dLayout(data1,data2,data3,floor){
             break;
         }
         ctx.fillRect(x*sparse,y*sparse,sparse,sparse);
+
+        ctx.fillStyle = "black";
+        ctx.font = "10px 'ＭＳ ゴシック'";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText("あいうえお", x*sparse, y*sparse, 200);
         ctx.fill();
      }
     }
