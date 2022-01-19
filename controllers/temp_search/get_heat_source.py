@@ -7,6 +7,29 @@ import numpy as np
 from matplotlib import pyplot as plt
 import copy
 import pyper
+
+
+class GetHeatSource():
+    def __init__(self,inc):
+        self.r = pyper.R()
+        self.width = inc.width
+        self.height = inc.height
+    
+    def calc_black_whiteArea(bw1_img):
+        img_size = bw1_img[0].size
+        whitePixels = cv2.countNonZero(bw1_img[0])
+        blackPixels = bw1_img[0].size - whitePixels
+    
+        whiteAreaRatio = (whitePixels/img_size)*100#[%]
+        blackAreaRatio = (blackPixels/img_size)*100#[%]
+
+
+        #print("White Area [%] : ", whiteAreaRatio)
+        #print("Black Area [%] : ", blackAreaRatio)
+
+        #cv2.imshow("window_name", bw1_img)
+        #cv2.waitKey(0)
+        return blackAreaRatio
         
         
 r=pyper.R()
