@@ -17,4 +17,6 @@ syouten = 2.13
 PAx = 13.8
 PAy1 = 4
 PAz = 1.5
-
+#熱源画像が入っているファイルのパスを指定。
+#使用するデータ以外のjpgファイルを入れていてはいけません。
+data_path = 'data/thermo_img/get_heat_source/*.JPG'

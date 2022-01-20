@@ -6,7 +6,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 import copy
 import pyper
-
+import glob
+import re
+import os
 
 import inc
 
@@ -53,7 +55,11 @@ def dist(x1,y1,x2,y2):
     return dis
 
 #画像の読み込み（グレースケールや二値化したものも含める）
-images = ['D (1).jpg', 'D (2).jpg','D (3).jpg','D (4).jpg', 'D (5).jpg','D (6).jpg','D (7).jpg', 'D (8).jpg']
+#images = ['D (1).jpg', 'D (2).jpg','D (3).jpg','D (4).jpg', 'D (5).jpg','D (6).jpg','D (7).jpg', 'D (8).jpg']
+images = glob.glob('data/thermo_img/get_heat_source/*.JPG')
+print(images)
+
+
 readimg = []
 grayimg = []
 bwimg = []
@@ -65,10 +71,6 @@ for i in range(len(images)):
     ret, bw_img = cv2.threshold(grayimg[i],170,255,cv2.THRESH_BINARY_INV)
     bwimg.append(bw_img)
 
-'''
-cv2.imshow('bw', bwimg[1])
-cv2.waitKey(0)
-'''
 
 #画像内の余計な部分を切り取る
 
@@ -80,10 +82,6 @@ for i in range(len(bwimg)):
     trim = trim[0:height, 0:width]
     trimbwimg.append(trim)
 
-"""
-cv2.imshow('bw', trimbwimg[1])
-cv2.waitKey(0)
-"""
 
 #画像内の黒色の部分の大きさを返す
 def calc_black_whiteArea(bw1_img):
@@ -287,11 +285,7 @@ def groupcheck(hwpoint,number):
 
     #memo = list(set(memo))
     print(memo)
-    '''
-    print('---------------------------------')
-    print('group')
-    print(group1)
-    '''
+    
 
     if len(memo)!=0:
         for i in range(len(memo)):
