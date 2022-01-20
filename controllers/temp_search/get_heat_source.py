@@ -21,7 +21,7 @@ PAx = inc.PAx
 PAy1 = inc.PAy1
 PAz = inc.PAz
 
-
+'''
 class GetHeatSource():
     def __init__(self,inc):
         self.r = pyper.R()
@@ -43,7 +43,7 @@ class GetHeatSource():
         #cv2.imshow("window_name", bw1_img)
         #cv2.waitKey(0)
         return blackAreaRatio
-        
+'''
         
 r=pyper.R()
 
@@ -58,7 +58,6 @@ readimg = []
 grayimg = []
 bwimg = []
 
-a = cv2.cvtColor('D (1).JPG',cv2.COLOR_RGB2GRAY)
 
 for i in range(len(images)):
     readimg.append(cv2.imread(images[i]))
