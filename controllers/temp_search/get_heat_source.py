@@ -56,7 +56,7 @@ def dist(x1,y1,x2,y2):
 
 #画像の読み込み（グレースケールや二値化したものも含める）
 #images = ['D (1).jpg', 'D (2).jpg','D (3).jpg','D (4).jpg', 'D (5).jpg','D (6).jpg','D (7).jpg', 'D (8).jpg']
-images = glob.glob('data/thermo_img/get_heat_source/*.JPG')
+images = glob.glob('data_path')
 print(images)
 
 
