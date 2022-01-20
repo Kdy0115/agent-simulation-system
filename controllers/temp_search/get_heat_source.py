@@ -1,4 +1,3 @@
-#!python3.5
 import csv
 import pprint
 import sys,cv2
@@ -7,6 +6,20 @@ import numpy as np
 from matplotlib import pyplot as plt
 import copy
 import pyper
+
+
+import inc
+
+width = inc.width
+height = inc.height
+trim_size = inc.trim_size
+brack_threshold = inc.brack_threshold
+xfov = inc.xfov
+yfov = inc.yfov
+syouten = inc.syouten
+PAx = inc.PAx
+PAy1 = inc.PAy1
+PAz = inc.PAz
 
 
 class GetHeatSource():
@@ -45,6 +58,8 @@ readimg = []
 grayimg = []
 bwimg = []
 
+a = cv2.cvtColor('D (1).JPG',cv2.COLOR_RGB2GRAY)
+
 for i in range(len(images)):
     readimg.append(cv2.imread(images[i]))
     grayimg.append(cv2.cvtColor(readimg[i], cv2.COLOR_RGB2GRAY))
@@ -57,8 +72,7 @@ cv2.waitKey(0)
 '''
 
 #画像内の余計な部分を切り取る
-height, width= 640,480
-print(height,width)
+
 width = width - 20
 trimbwimg = []
 
@@ -81,12 +95,6 @@ def calc_black_whiteArea(bw1_img):
     whiteAreaRatio = (whitePixels/img_size)*100#[%]
     blackAreaRatio = (blackPixels/img_size)*100#[%]
     
-    
-    #print("White Area [%] : ", whiteAreaRatio)
-    #print("Black Area [%] : ", blackAreaRatio)
-
-    #cv2.imshow("window_name", bw1_img)
-    #cv2.waitKey(0)
     return blackAreaRatio
 
 
@@ -94,10 +102,7 @@ def calc_black_whiteArea(bw1_img):
 #画像のどこに黒色があるかをリストアップする
 h = 0
 w = 0
-#pointlist = []
-#hwpoint = []
-#hwpoint0 = []
-#hwpoint1 = []
+
 allpoint = []
 hpoint = []
 wpoint = []
@@ -109,18 +114,15 @@ for k in range(len(bwimg)):
 
     print(hwpoint)
     allpoint.append(hwpoint)
-    #cv2.imshow('bw', trimbwimg[k])
-    #cv2.waitKey(0)
-
+    
     for i in range(1000):
-        trim_bwimg = bwimg[k][20*h : 20*(h+1), 20*w : 20*(w+1)]
-        #print('//////////////////')
-        #print(h,w)
+        trim_bwimg = bwimg[k][trim_size*h : trim_size*(h+1), trim_size*w : trim_size*(w+1)]
+        
         blackarea = calc_black_whiteArea(trim_bwimg)
-        #print("Black Area [%] : ", blackarea)
         
         
-        if blackarea > 40:
+        
+        if blackarea > brack_threshold:
             hwpoint.append([h,w])
             hpoint.append(h)
             wpoint.append(w)
@@ -128,12 +130,12 @@ for k in range(len(bwimg)):
         
         w = w+1
 
-        if 20*w >= width:
+        if trim_size*w >= width:
             w = 0
             h = h+1
 
         
-        if 20*h >=height:
+        if trim_size*h >=height:
             h = 0
             print(hwpoint)
             allpoint.append(hwpoint)
@@ -270,10 +272,6 @@ def groupcheck(hwpoint,number):
 
     for i in range(len(group)):
         if dist(group[i][0],group[i][1],group[i][2],group[i][3])>3:
-            #print(i)
-            #trimimg = trimbwimg[number][20*group[i][0]:20*group[i][2], 20*group[i][1]:20*group[i][3]]
-            #cv2.imshow('i', trimimg)
-            #cv2.waitKey(0)
             group1.append([group[i][0],group[i][1],group[i][2],group[i][3]])
 
     
@@ -317,14 +315,14 @@ print(all_group[0])
 
 #重心の測定
 
-max_x = 230
-max_y = 320
+max_x = width/2
+max_y = height/2
 
 
 def juusin(group,number):
 
     for i in range(len(group)):
-        trimimg = trimbwimg[number][20*group[i][0]:20*group[i][2], 20*group[i][1]:20*group[i][3]]
+        trimimg = trimbwimg[number][trim_size*group[i][0]:trim_size*group[i][2], trim_size*group[i][1]:trim_size*group[i][3]]
         cv2.imshow('0', trimimg)
         cv2.waitKey(0)
 
@@ -336,8 +334,8 @@ def juusin(group,number):
         mu = cv2.moments(whiteimg, False)
         x,y= int(mu["m10"]/mu["m00"]) , int(mu["m01"]/mu["m00"])
         cv2.circle(whiteimg, (x,y), 4, 100, 2, 4)
-        x1 = 20 * group[i][1] + x
-        y1 = 20 * group[i][0] + y
+        x1 = trim_size * group[i][1] + x
+        y1 = trim_size * group[i][0] + y
         y1 = abs(y1 - (2*max_y))
         group.insert(i,[group[i][0],group[i][1],group[i][2],group[i][3],y1,x1])
         ret = group.pop(i+1)
@@ -351,18 +349,6 @@ print('---------------------------------------------------')
 if len(images) >= 2:
     for i in range(len(all_group)):
         all_group[i] = juusin(all_group[i],i)
-
-
-
-#ここから実在空間での位置を計算する
-xfov = 43
-yfov = 55
-syouten = 2.13
-#焦点距離はm単位
-#座標の値がどのように帰ってくるか分かれば変更。分かったため設定。
-max_x = 230+10
-max_y = 320
-
 
 #画像で同じものを撮影していると判断する機構
 
@@ -384,8 +370,8 @@ def samecheck(group0,group1,number0,number1):
         for k in range(len(group1)):
             if lowh - group1[k][0] <= 1 and highh -group1[k][2] <= 1 and abs((highw - loww) - (group1[k][3]-group1[k][1])) < 2 and loww > group1[k][1] and highw > group1[k][3]:
                 size = 0
-                size = 20 * (highh - lowh) * 20 * (highw - loww)
-                bw_img = trimbwimg[number0][20*lowh:20*highh, 20*loww:20*highw]
+                size = trim_size * (highh - lowh) * trim_size * (highw - loww)
+                bw_img = trimbwimg[number0][trim_size*lowh:trim_size*highh, trim_size*loww:trim_size*highw]
                 blackarea = calc_black_whiteArea(bw_img)
                 size = size * blackarea / 100
                 same.append([number0,group0[i][4],group0[i][5],number1,group1[k][4],group1[k][5],size])
@@ -411,10 +397,6 @@ print(allsame)
 print('------------------------------------------------------')
 print(len(allsame))
 
-with open('C:\python\sample1.csv', mode='w') as f:
-    writer = csv.writer(f)
-    for i in range(len(allsame)):
-        writer.writerow(allsame[i])
 
 
 allsame1 = []
@@ -438,11 +420,6 @@ for i in range(len(allsame)):
 print(allsame1)
 print('------------------------------------------------------')
 print(len(allsame1))
-
-with open('C:\python\sample2.csv', mode='w') as f:
-    writer = csv.writer(f)
-    for i in range(len(allsame1)):
-        writer.writerow(allsame1[i])
 
 
 def juuhuku1(allsame):
@@ -511,14 +488,14 @@ print(allsame1)
 for i in range(len(allsame1)):
     Ax = allsame1[i][2]
     Ay = allsame1[i][1]
-    PAx = 13.8
-    PAy = 4 + 0.5*allsame1[i][0]
-    PAz = 1.5
+    
+    PAy = PAy1 + 0.5*allsame1[i][0]
+    
     Bx = allsame1[i][5]
     By = allsame1[i][4]
-    PBx = 13.8
-    PBy = 4 + 0.5*allsame1[i][3]
-    PBz = 1.5
+    PBx = PAx
+    PBy = PAy1 + 0.5*allsame1[i][3]
+    PBz = PAz
 
     lineA_katamuki = math.tan(math.radians((180+(xfov/2))-(xfov*Ax/(2*max_x))))
     Ateisuu = PAy - (lineA_katamuki * PAx)
@@ -578,10 +555,3 @@ r("source(file='temp.R', encoding='utf-8')")
 
 #print(type(r('result_csv')))
 #print(r('result_csv'))
-
-
-#ファイル出力
-with open('C:\python\sample.csv', mode='w',newline='') as f:
-    writer = csv.writer(f)
-    for i in range(len(kouten)):
-        writer.writerow(kouten[i])

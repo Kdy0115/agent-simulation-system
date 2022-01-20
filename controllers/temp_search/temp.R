@@ -104,4 +104,4 @@ print(result_csv)
 
 #write.csv(3,'result.csv')
 result_csv<-data.frame(result_csv)
-write.csv(result_csv,"C:/python/comp-program/result.csv")
+write.csv(result_csv,"out/result.csv")
