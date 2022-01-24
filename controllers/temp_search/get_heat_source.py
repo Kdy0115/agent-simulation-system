@@ -22,6 +22,7 @@ syouten = inc.syouten
 PAx = inc.PAx
 PAy1 = inc.PAy1
 PAz = inc.PAz
+data_path = inc.data_path
 
 '''
 class GetHeatSource():
@@ -45,6 +46,9 @@ class GetHeatSource():
         #cv2.imshow("window_name", bw1_img)
         #cv2.waitKey(0)
         return blackAreaRatio
+
+    def __main():
+        
 '''
         
 r=pyper.R()
@@ -56,7 +60,11 @@ def dist(x1,y1,x2,y2):
 
 #画像の読み込み（グレースケールや二値化したものも含める）
 #images = ['D (1).jpg', 'D (2).jpg','D (3).jpg','D (4).jpg', 'D (5).jpg','D (6).jpg','D (7).jpg', 'D (8).jpg']
-images = glob.glob('data_path')
+#print(os.getcwd())
+#wd = os.getcwd()
+#data_path = str(wd)+"\\"+str(data_path)
+images = glob.glob(data_path)
+print(data_path)
 print(images)
 
 
@@ -302,8 +310,7 @@ for i in range(len(all_hwpoint)):
     group0 = []
     group0 = copy.deepcopy(groupcheck(all_hwpoint[i],i))
     all_group.append(group0)
-print('===========================================================================')
-print(all_group[0])
+
 
 
 #重心の測定

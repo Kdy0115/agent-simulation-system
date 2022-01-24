@@ -14,15 +14,15 @@ te<-function(p0,p1,Z){
 
 f<-list()
 
-f<-paste0(system.file("extdata/D (1).jpg", package="Thermimage"))
-f<-c(f,paste0(system.file("extdata/D (2).jpg", package="Thermimage")))
-f<-c(f,paste0(system.file("extdata/D (3).jpg", package="Thermimage")))
-f<-c(f,paste0(system.file("extdata/D (4).jpg", package="Thermimage")))
-f<-c(f,paste0(system.file("extdata/D (5).jpg", package="Thermimage")))
-f<-c(f,paste0(system.file("extdata/D (6).jpg", package="Thermimage")))
-f<-c(f,paste0(system.file("extdata/D (7).jpg", package="Thermimage")))
-f<-c(f,paste0(system.file("extdata/D (8).jpg", package="Thermimage")))
-f<-c(f,paste0(system.file("extdata/D (9).jpg", package="Thermimage")))
+f<-paste0(system.file("extdata/data/thermo_img/get_heat_source/D (1).jpg", package="Thermimage"))
+f<-c(f,paste0(system.file("extdata/data/thermo_img/get_heat_source/D (2).jpg", package="Thermimage")))
+f<-c(f,paste0(system.file("extdata/data/thermo_img/get_heat_source/D (3).jpg", package="Thermimage")))
+f<-c(f,paste0(system.file("extdata/data/thermo_img/get_heat_source/D (4).jpg", package="Thermimage")))
+f<-c(f,paste0(system.file("extdata/data/thermo_img/get_heat_source/D (5).jpg", package="Thermimage")))
+f<-c(f,paste0(system.file("extdata/data/thermo_img/get_heat_source/D (6).jpg", package="Thermimage")))
+f<-c(f,paste0(system.file("extdata/data/thermo_img/get_heat_source/D (7).jpg", package="Thermimage")))
+f<-c(f,paste0(system.file("extdata/data/thermo_img/get_heat_source/D (8).jpg", package="Thermimage")))
+f<-c(f,paste0(system.file("extdata/data/thermo_img/get_heat_source/D (9).jpg", package="Thermimage")))
 
 
 
