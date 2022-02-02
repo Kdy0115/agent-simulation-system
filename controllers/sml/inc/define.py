@@ -6,7 +6,7 @@
 ALPHA = 0.49
 # ALPHA = 0.25
 # Natural convection heat model（自然対流モデル）
-N_BETA = 0.30
+N_BETA = 0.13
 # Convection heat model[β] （強制対流モデル）
 # BETA = 0.061
 BETA = 0.61

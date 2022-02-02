@@ -309,10 +309,12 @@ class HeatCharge(Agent):
         )
 
         self.speed  /= math.exp(1/self.change_rate)
+        # self.speed *= self.change_rate
         if self.radius >= 5:
             self.radius = 5
         else:
             self.radius *= math.exp(1/self.change_rate)
+            # self.radius = self.radius*(1 + self.change_rate)
         
         if not self.out_of_spaces(new_pos):
             self.model.grid.move_agent(self,new_pos)
