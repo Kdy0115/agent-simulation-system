@@ -70,6 +70,14 @@ async function print_heatmap(){
   }
   number = 0;
   data = await eel.import_result_data(number)();
+  const aryMax = function (a, b) {return Math.max(a, b);}
+  //const aryMin = function (a, b) {return Math.min(a, b);}
+  yMax = data[1].reduce(aryMax);
+  
+  for(let i = 0;i < data[1].length;i++){
+    data[1][i] = Math.abs(data[1][i]-yMax);
+  }
+  console.log(yMax);
   console.log(data[0]);
   console.log(data[1]);
   
@@ -204,15 +212,28 @@ async function print_graph(index){
   x = document.getElementById(`graph_x_${index}`).value;
   y = document.getElementById(`graph_y_${index}`).value;
   z = document.getElementById(`graph_z_${index}`).value;
-
-  console.log(x,y,z)
-
+  
+  //yMax = data[1].reduce(aryMax);
+  
   if(json_data_flag == false){
     await eel.open_json(output_folder_path)();
     json_data_flag = true;
   }
+
+  number = 0;
+  data = await eel.import_result_data(number)();
+
+
+  //yMax = 26
+  const aryMax = function (a, b) {return Math.max(a, b);}
+  yMax = data[1].reduce(aryMax)
+  y = Math.abs(y - yMax);
+
+  console.log(x,y,z)
+
   allData = await eel.import_result_data_for_graph(output_folder_path,x,y,z)()
   data_for_graph = allData[0];
+  //data_for_graph.reverse();
   maxData = allData[1];
   minData = allData[2];
   console.log(data_for_graph);
@@ -242,7 +263,6 @@ async function print_graph(index){
     labels: labels,
     datasets: [{
         label: '同一地点の時間による温度変化',
-        // data: [data_for_graph[0],data_for_graph[100],data_for_graph[200],data_for_graph[300],data_for_graph[400],data_for_graph[500],data_for_graph[600],data_for_graph[700],data_for_graph[800],data_for_graph[900],data_for_graph[1000]],
         data:data_for_graph,
         // borderColor: 'rgba(255, 100, 100, 1)',
         borderColor:'#2196F3',

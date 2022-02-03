@@ -117,7 +117,7 @@ all_hwpoint = []
 for k in range(len(bwimg)):
     hwpoint = []
 
-    print(hwpoint)
+    #print(hwpoint)
     allpoint.append(hwpoint)
     
     for i in range(1000):
@@ -142,9 +142,9 @@ for k in range(len(bwimg)):
         
         if trim_size*h >=height:
             h = 0
-            print(hwpoint)
+            #print(hwpoint)
             allpoint.append(hwpoint)
-            print("------------------------------------------------------")
+            #print("------------------------------------------------------")
             break
 
     hwpoint0 = copy.deepcopy(hwpoint)
@@ -292,7 +292,7 @@ def groupcheck(hwpoint,number):
                 memo.append(i)
 
     #memo = list(set(memo))
-    print(memo)
+    #print(memo)
     
 
     if len(memo)!=0:
@@ -323,8 +323,8 @@ def juusin(group,number):
 
     for i in range(len(group)):
         trimimg = trimbwimg[number][trim_size*group[i][0]:trim_size*group[i][2], trim_size*group[i][1]:trim_size*group[i][3]]
-        cv2.imshow('0', trimimg)
-        cv2.waitKey(0)
+        #cv2.imshow('0', trimimg)
+        #cv2.waitKey(0)
 
         x = 0
         y = 0
@@ -339,12 +339,12 @@ def juusin(group,number):
         y1 = abs(y1 - (2*max_y))
         group.insert(i,[group[i][0],group[i][1],group[i][2],group[i][3],y1,x1])
         ret = group.pop(i+1)
-        print(group[i])
+        #print(group[i])
 
-    print(group)
+    #print(group)
     return group
 
-print('---------------------------------------------------')
+#print('---------------------------------------------------')
 
 if len(images) >= 2:
     for i in range(len(all_group)):
@@ -359,8 +359,8 @@ same1 = []
 def samecheck(group0,group1,number0,number1):
     same = []
     same1 = []
-    print(group0)
-    print(group1)
+    #print(group0)
+    #print(group1)
     for i in range(len(group0)):
         lowh = group0[i][0]
         loww = group0[i][1]
@@ -393,9 +393,9 @@ if len(images) >= 2:
             allsame.append(same1[k])
 
 
-print(allsame)
-print('------------------------------------------------------')
-print(len(allsame))
+#print(allsame)
+#print('------------------------------------------------------')
+#print(len(allsame))
 
 
 
@@ -417,9 +417,9 @@ for i in range(len(allsame)):
             break
 
 
-print(allsame1)
-print('------------------------------------------------------')
-print(len(allsame1))
+#print(allsame1)
+#print('------------------------------------------------------')
+#print(len(allsame1))
 
 
 def juuhuku1(allsame):
@@ -452,13 +452,13 @@ def juuhuku2(allsame):
     allsame1.append(allsame[0])
     for i in range(len(allsame)):
         if i ==0:
-            print("continue1")
-            print(i)
+            #print("continue1")
+            #print(i)
             continue
         for k in range(len(allsame1)):
             if allsame1[k] == allsame[i]:
-                print("continue2")
-                print(i)
+                #print("continue2")
+                #print(i)
                 break
             elif k == len(allsame1)-1:
                 allsame1.append(allsame[i])
@@ -470,20 +470,20 @@ def juuhuku2(allsame):
 #allsame1 = juuhuku(allsame)
 allsame1 = juuhuku1(allsame1)
 allsame1 = juuhuku1(allsame1)
-
+'''
 print("----------------------------------")
 print(len(allsame1))
 print(allsame1)
-
+'''
 allsame1 = juuhuku2(allsame1)
 
 
 kouten = []
-
+'''
 print("----------------------------------")
 print(len(allsame1))
 print(allsame1)
-
+'''
 
 for i in range(len(allsame1)):
     Ax = allsame1[i][2]
@@ -541,7 +541,7 @@ r.assign("point_originx",point_originx)
 r.assign("point_originy",point_originy)
 r.assign("point_originz",point_originz)
 r.assign("size",size)
-
+r.assign("images_length",len(images))
 
 
 
@@ -553,5 +553,6 @@ result=0
 
 r("source(file='temp.R', encoding='utf-8')")
 
-#print(type(r('result_csv')))
-#print(r('result_csv'))
+print(type(r('result_csv')))
+print(r('result_csv'))
+print("---------------------------------")
