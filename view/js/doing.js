@@ -89,6 +89,13 @@ async function previous_heatmap(){
     number = number - 1;
   }
   data = await eel.import_result_data(number)();
+  const aryMax = function (a, b) {return Math.max(a, b);}
+  //const aryMin = function (a, b) {return Math.min(a, b);}
+  yMax = data[1].reduce(aryMax);
+  
+  for(let i = 0;i < data[1].length;i++){
+    data[1][i] = Math.abs(data[1][i]-yMax);
+  }
   console.log(data[0]);
   console.log(data[1]);
   
